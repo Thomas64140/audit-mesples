@@ -955,63 +955,48 @@ $('#btnNew').addEventListener('click', newAudit);
 $('#btnSave').addEventListener('click', saveAudit);
 $('#btnDelete').addEventListener('click', deleteAudit);
 $('#btnExportAll').addEventListener('click', exportAll);
-// ---- Génération de PDF (chargement fiable + ouverture immédiate de l'onglet) ----
-let html2pdfLoadPromise = null;
-function loadHtml2Pdf(){
-  if(window.html2pdf) return Promise.resolve(window.html2pdf);
-  if(html2pdfLoadPromise) return html2pdfLoadPromise;
-  html2pdfLoadPromise = new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-    s.onload = () => window.html2pdf ? resolve(window.html2pdf) : reject(new Error('html2pdf indisponible après chargement'));
-    s.onerror = () => reject(new Error('Impossible de charger le module PDF (connexion internet ?)'));
-    document.head.appendChild(s);
-  });
-  return html2pdfLoadPromise;
-}
-
-async function exportElementAsPdf(element, filename, marginOpt){
-  // Ouvrir l'onglet tout de suite, pendant le geste de l'utilisateur (sinon Safari bloque l'ouverture après un traitement asynchrone)
-  const previewWin = window.open('', '_blank');
-  if(previewWin){
-    previewWin.document.write('<title>' + filename + '</title><body style="font-family:sans-serif;padding:40px;color:#333;">Génération du PDF en cours, merci de patienter…</body>');
+// ---- Génération PDF via impression native dans un onglet propre ----
+function printElementInNewWindow(sourceElement, title){
+  const win = window.open('', '_blank');
+  if(!win){
+    alert("Le navigateur a bloqué l'ouverture d'un nouvel onglet. Autorise les fenêtres pop-up pour ce site, puis réessaie.");
+    return;
   }
-  try{
-    const lib = await loadHtml2Pdf();
-    document.body.classList.add('capturing-pdf');
-    const blob = await lib().set({
-      margin: marginOpt,
-      filename: filename,
-      image: { type:'jpeg', quality:0.95 },
-      html2canvas: { scale:2, useCORS:true },
-      jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-      pagebreak: { mode:['avoid-all','css'] }
-    }).from(element).outputPdf('blob');
-    document.body.classList.remove('capturing-pdf');
-    const blobUrl = URL.createObjectURL(blob);
-    if(previewWin && !previewWin.closed){
-      previewWin.location.href = blobUrl;
-    } else {
-      const a = document.createElement('a');
-      a.href = blobUrl; a.download = filename; a.click();
-    }
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
-  }catch(e){
-    console.error('Erreur export PDF', e);
-    document.body.classList.remove('capturing-pdf');
-    if(previewWin && !previewWin.closed){
-      previewWin.document.body.textContent = "La génération du PDF a échoué : " + e.message + ". Vérifie ta connexion internet et réessaie. Tu peux fermer cet onglet.";
-    } else {
-      alert("La génération du PDF a échoué : " + e.message + ". Vérifie ta connexion internet et réessaie.");
-    }
+  const styleTag = document.querySelector('style') ? document.querySelector('style').outerHTML : '';
+  const clone = sourceElement.cloneNode(true);
+  clone.querySelectorAll('.hide-for-pdf').forEach(el => el.remove());
+
+  win.document.open();
+  win.document.write(
+    '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>' + escapeHtml(title) + '</title>' +
+    styleTag +
+    '<style>' +
+    '@page{ size:A4; margin:12mm; } ' +
+    'html,body{ background:#fff; margin:0; } ' +
+    '.content{ max-width:none; padding:0; } ' +
+    '.letter-page{ box-shadow:none; margin:0; min-height:auto; max-width:none; } ' +
+    '.hide-for-pdf{ display:none !important; }' +
+    '</style>' +
+    '</head><body></body></html>'
+  );
+  win.document.close();
+
+  const imported = win.document.importNode(clone, true);
+  win.document.body.appendChild(imported);
+
+  const triggerPrint = () => { win.focus(); win.print(); };
+  if(win.document.readyState === 'complete'){
+    setTimeout(triggerPrint, 300);
+  } else {
+    win.addEventListener('load', () => setTimeout(triggerPrint, 300));
+    setTimeout(triggerPrint, 800); // filet de sécurité si l'évènement load ne se déclenche pas
   }
 }
 
 $('#btnPdf').addEventListener('click', () => {
   const conducteur = $('#fConducteur').value.trim() || 'audit';
   const date = $('#fDate').value || new Date().toISOString().slice(0,10);
-  const filename = 'Audit_' + conducteur.replace(/\s+/g,'_') + '_' + date + '.pdf';
-  exportElementAsPdf(document.querySelector('.content'), filename, 8);
+  printElementInNewWindow(document.querySelector('.content'), 'Audit_' + conducteur.replace(/\s+/g,'_') + '_' + date);
 });
 
 // ---- Lettre de suivi ----
@@ -1094,8 +1079,7 @@ $('#btnGenLetter').addEventListener('click', openLetterPreview);
 $('#btnCloseLetter').addEventListener('click', () => $('#letterOverlay').classList.remove('open'));
 $('#btnPrintLetter').addEventListener('click', () => {
   const conducteur = ($('#fLettrePrenom').value.trim() + '_' + $('#fLettreNom').value.trim()).trim() || 'chauffeur';
-  const filename = 'Lettre_audit_' + conducteur.replace(/\s+/g,'_') + '.pdf';
-  exportElementAsPdf(document.getElementById('letterContent'), filename, 12);
+  printElementInNewWindow(document.getElementById('letterContent'), 'Lettre_audit_' + conducteur.replace(/\s+/g,'_'));
 });
 
 (async function init(){
