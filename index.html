@@ -181,7 +181,6 @@
   body.capturing-pdf .letter-overlay{ background:#fff; }
   body.capturing-pdf .letter-page{ box-shadow:none; }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 </head>
 <body>
 <div class="app">
@@ -467,14 +466,18 @@ function createSignaturePad(canvasId, placeholderId){
   let drawing = false;
   let hasInk = false;
   let last = null;
+  let lastW = 0, lastH = 0;
 
   function resize(){
     const rect = canvas.getBoundingClientRect();
+    if(rect.width === 0 || rect.height === 0) return;
+    if(Math.abs(rect.width - lastW) < 1 && Math.abs(rect.height - lastH) < 1) return;
+    lastW = rect.width; lastH = rect.height;
     const ratio = window.devicePixelRatio || 1;
     const prevData = hasInk ? canvas.toDataURL() : null;
     canvas.width = rect.width * ratio;
     canvas.height = rect.height * ratio;
-    ctx.scale(ratio, ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.lineWidth = 2.2;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -486,37 +489,74 @@ function createSignaturePad(canvasId, placeholderId){
     }
   }
 
-  function pointFromEvent(e){
+  function pointFromClientXY(clientX, clientY){
     const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    return { x: clientX - rect.left, y: clientY - rect.top };
   }
 
-  function start(e){
-    e.preventDefault();
+  function beginStroke(x, y){
     drawing = true;
-    last = pointFromEvent(e);
-    canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
-  }
-  function move(e){
-    if(!drawing) return;
-    e.preventDefault();
-    const p = pointFromEvent(e);
+    last = { x, y };
+    // un point seul (tap) doit quand même laisser une marque visible
     ctx.beginPath();
-    ctx.moveTo(last.x, last.y);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    last = p;
+    ctx.arc(x, y, ctx.lineWidth/2, 0, Math.PI*2);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fill();
     if(!hasInk){ hasInk = true; placeholder.classList.add('hidden'); }
   }
-  function end(e){ drawing = false; }
+  function continueStroke(x, y){
+    if(!drawing || !last) return;
+    ctx.beginPath();
+    ctx.moveTo(last.x, last.y);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    last = { x, y };
+  }
+  function endStroke(){ drawing = false; last = null; }
 
-  canvas.addEventListener('pointerdown', start);
-  canvas.addEventListener('pointermove', move);
-  canvas.addEventListener('pointerup', end);
-  canvas.addEventListener('pointerleave', end);
-  canvas.addEventListener('pointercancel', end);
+  const supportsPointer = window.PointerEvent !== undefined;
 
-  window.addEventListener('resize', resize);
+  if(supportsPointer){
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      resize();
+      const p = pointFromClientXY(e.clientX, e.clientY);
+      beginStroke(p.x, p.y);
+      try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+    }, { passive:false });
+    canvas.addEventListener('pointermove', (e) => {
+      if(!drawing) return;
+      e.preventDefault();
+      const p = pointFromClientXY(e.clientX, e.clientY);
+      continueStroke(p.x, p.y);
+    }, { passive:false });
+    ['pointerup','pointerleave','pointercancel'].forEach(evt => canvas.addEventListener(evt, endStroke));
+  } else {
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      resize();
+      const t = e.touches[0];
+      const p = pointFromClientXY(t.clientX, t.clientY);
+      beginStroke(p.x, p.y);
+    }, { passive:false });
+    canvas.addEventListener('touchmove', (e) => {
+      if(!drawing) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      const p = pointFromClientXY(t.clientX, t.clientY);
+      continueStroke(p.x, p.y);
+    }, { passive:false });
+    ['touchend','touchcancel'].forEach(evt => canvas.addEventListener(evt, endStroke));
+    canvas.addEventListener('mousedown', (e) => { resize(); const p = pointFromClientXY(e.clientX, e.clientY); beginStroke(p.x, p.y); });
+    canvas.addEventListener('mousemove', (e) => { if(drawing){ const p = pointFromClientXY(e.clientX, e.clientY); continueStroke(p.x, p.y); } });
+    ['mouseup','mouseleave'].forEach(evt => canvas.addEventListener(evt, endStroke));
+  }
+
+  if(window.ResizeObserver){
+    new ResizeObserver(() => resize()).observe(canvas);
+  } else {
+    window.addEventListener('resize', resize);
+  }
   setTimeout(resize, 0);
 
   return {
@@ -530,6 +570,7 @@ function createSignaturePad(canvasId, placeholderId){
     toDataURL(){ return hasInk ? canvas.toDataURL('image/png') : null; },
     loadFromDataURL(url){
       if(!url) return;
+      resize();
       const rect = canvas.getBoundingClientRect();
       const img = new Image();
       img.onload = () => {
@@ -906,32 +947,63 @@ $('#btnNew').addEventListener('click', newAudit);
 $('#btnSave').addEventListener('click', saveAudit);
 $('#btnDelete').addEventListener('click', deleteAudit);
 $('#btnExportAll').addEventListener('click', exportAll);
-$('#btnPdf').addEventListener('click', async () => {
+// ---- Génération de PDF (chargement fiable + ouverture immédiate de l'onglet) ----
+let html2pdfLoadPromise = null;
+function loadHtml2Pdf(){
+  if(window.html2pdf) return Promise.resolve(window.html2pdf);
+  if(html2pdfLoadPromise) return html2pdfLoadPromise;
+  html2pdfLoadPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    s.onload = () => window.html2pdf ? resolve(window.html2pdf) : reject(new Error('html2pdf indisponible après chargement'));
+    s.onerror = () => reject(new Error('Impossible de charger le module PDF (connexion internet ?)'));
+    document.head.appendChild(s);
+  });
+  return html2pdfLoadPromise;
+}
+
+async function exportElementAsPdf(element, filename, marginOpt){
+  // Ouvrir l'onglet tout de suite, pendant le geste de l'utilisateur (sinon Safari bloque l'ouverture après un traitement asynchrone)
+  const previewWin = window.open('', '_blank');
+  if(previewWin){
+    previewWin.document.write('<title>' + filename + '</title><body style="font-family:sans-serif;padding:40px;color:#333;">Génération du PDF en cours, merci de patienter…</body>');
+  }
+  try{
+    const lib = await loadHtml2Pdf();
+    document.body.classList.add('capturing-pdf');
+    const blob = await lib().set({
+      margin: marginOpt,
+      filename: filename,
+      image: { type:'jpeg', quality:0.95 },
+      html2canvas: { scale:2, useCORS:true },
+      jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
+      pagebreak: { mode:['avoid-all','css'] }
+    }).from(element).outputPdf('blob');
+    document.body.classList.remove('capturing-pdf');
+    const blobUrl = URL.createObjectURL(blob);
+    if(previewWin && !previewWin.closed){
+      previewWin.location.href = blobUrl;
+    } else {
+      const a = document.createElement('a');
+      a.href = blobUrl; a.download = filename; a.click();
+    }
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+  }catch(e){
+    console.error('Erreur export PDF', e);
+    document.body.classList.remove('capturing-pdf');
+    if(previewWin && !previewWin.closed){
+      previewWin.document.body.textContent = "La génération du PDF a échoué : " + e.message + ". Vérifie ta connexion internet et réessaie. Tu peux fermer cet onglet.";
+    } else {
+      alert("La génération du PDF a échoué : " + e.message + ". Vérifie ta connexion internet et réessaie.");
+    }
+  }
+}
+
+$('#btnPdf').addEventListener('click', () => {
   const conducteur = $('#fConducteur').value.trim() || 'audit';
   const date = $('#fDate').value || new Date().toISOString().slice(0,10);
   const filename = 'Audit_' + conducteur.replace(/\s+/g,'_') + '_' + date + '.pdf';
-  if(window.html2pdf){
-    document.body.classList.add('capturing-pdf');
-    try{
-      await window.html2pdf().set({
-        margin: 8,
-        filename: filename,
-        image: { type:'jpeg', quality:0.95 },
-        html2canvas: { scale:2, useCORS:true },
-        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-        pagebreak: { mode:['avoid-all','css'] }
-      }).from(document.querySelector('.content')).save();
-    }catch(e){
-      console.error('Erreur export PDF', e);
-      alert("La génération du PDF a échoué. Réessaie, ou utilise l'impression du navigateur.");
-    }
-    document.body.classList.remove('capturing-pdf');
-  } else {
-    const prevTitle = document.title;
-    document.title = filename.replace('.pdf','');
-    window.print();
-    document.title = prevTitle;
-  }
+  exportElementAsPdf(document.querySelector('.content'), filename, 8);
 });
 
 // ---- Lettre de suivi ----
@@ -1012,33 +1084,10 @@ function openLetterPreview(){
 
 $('#btnGenLetter').addEventListener('click', openLetterPreview);
 $('#btnCloseLetter').addEventListener('click', () => $('#letterOverlay').classList.remove('open'));
-$('#btnPrintLetter').addEventListener('click', async () => {
+$('#btnPrintLetter').addEventListener('click', () => {
   const conducteur = ($('#fLettrePrenom').value.trim() + '_' + $('#fLettreNom').value.trim()).trim() || 'chauffeur';
   const filename = 'Lettre_audit_' + conducteur.replace(/\s+/g,'_') + '.pdf';
-  if(window.html2pdf){
-    document.body.classList.add('capturing-pdf');
-    try{
-      await window.html2pdf().set({
-        margin: 12,
-        filename: filename,
-        image: { type:'jpeg', quality:0.95 },
-        html2canvas: { scale:2, useCORS:true },
-        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' },
-        pagebreak: { mode:['avoid-all','css'] }
-      }).from(document.getElementById('letterContent')).save();
-    }catch(e){
-      console.error('Erreur export PDF lettre', e);
-      alert("La génération du PDF a échoué. Réessaie, ou utilise l'impression du navigateur.");
-    }
-    document.body.classList.remove('capturing-pdf');
-  } else {
-    document.body.classList.add('printing-letter');
-    const prevTitle = document.title;
-    document.title = filename.replace('.pdf','');
-    window.print();
-    document.title = prevTitle;
-    document.body.classList.remove('printing-letter');
-  }
+  exportElementAsPdf(document.getElementById('letterContent'), filename, 12);
 });
 
 (async function init(){
