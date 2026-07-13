@@ -289,6 +289,14 @@
   </div>
 </div>
 
+<div class="letter-overlay" id="letterOverlay">
+  <div class="letter-toolbar hide-for-pdf">
+    <button type="button" class="btn-ghost" id="btnCloseLetter">Fermer</button>
+    <button type="button" class="btn-save" id="btnPrintLetter">Imprimer / Enregistrer en PDF</button>
+  </div>
+  <div class="letter-page" id="letterContent"></div>
+</div>
+
 <script>
 const VEHICLE_TYPES = ['Benne','Citerne pulvérulente','Ecovrac','Toupie'];
 
@@ -1096,12 +1104,5 @@ $('#btnPrintLetter').addEventListener('click', () => {
   newAudit();
 })();
 </script>
-<div class="letter-overlay" id="letterOverlay">
-  <div class="letter-toolbar hide-for-pdf">
-    <button type="button" class="btn-ghost" id="btnCloseLetter">Fermer</button>
-    <button type="button" class="btn-save" id="btnPrintLetter">Imprimer / Enregistrer en PDF</button>
-  </div>
-  <div class="letter-page" id="letterContent"></div>
-</div>
 </body>
 </html>
