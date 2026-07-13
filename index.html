@@ -965,6 +965,20 @@ function printElementInNewWindow(sourceElement, title){
   const styleTag = document.querySelector('style') ? document.querySelector('style').outerHTML : '';
   const clone = sourceElement.cloneNode(true);
   clone.querySelectorAll('.hide-for-pdf').forEach(el => el.remove());
+  clone.querySelectorAll('.sig-placeholder').forEach(el => el.remove());
+
+  // cloneNode() ne copie pas le contenu dessiné d'un <canvas> (signatures) : on le remplace par une image
+  const originalCanvases = sourceElement.querySelectorAll('canvas');
+  const clonedCanvases = clone.querySelectorAll('canvas');
+  originalCanvases.forEach((origCanvas, i) => {
+    const cloneCanvas = clonedCanvases[i];
+    if(!cloneCanvas) return;
+    const img = document.createElement('img');
+    img.src = origCanvas.toDataURL('image/png');
+    img.className = cloneCanvas.className;
+    img.alt = 'Signature';
+    cloneCanvas.replaceWith(img);
+  });
 
   win.document.open();
   win.document.write(
