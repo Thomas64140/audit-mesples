@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Rapport Audit Conducteur — Transports Mesples</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Audit Mesples">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<link rel="icon" href="data:image/png;base64,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">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --navy: #0d3462;
+    --navy-2: #124a86;
+    --sub-blue: #5b93cc;
+    --sub-blue-bg: #dbe8f6;
+    --bg: #eef1f5;
+    --panel: #ffffff;
+    --border: #d7dde5;
+    --ok: #1f9d55;
+    --ok-bg: #e3f6ea;
+    --bad: #d64545;
+    --bad-bg: #fbe7e7;
+    --text: #1c2733;
+    --muted: #667485;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; }
+
+  .app{ display:grid; grid-template-columns: 290px 1fr; min-height:100vh; }
+  @media (max-width: 900px){ .app{ grid-template-columns: 1fr; } .sidebar{ order:2; } }
+
+  .sidebar{ background:var(--panel); border-right:1px solid var(--border); padding:20px 16px; display:flex; flex-direction:column; gap:14px; }
+  .brand{ font-family:'Archivo Black',sans-serif; color:var(--navy); font-size:17px; line-height:1.05; letter-spacing:-0.01em; padding-bottom:10px; border-bottom:2px solid var(--navy); }
+  .brand span{ display:block; font-size:12px; color:var(--muted); font-family:'Inter',sans-serif; font-weight:500; margin-top:4px; letter-spacing:0.02em; }
+
+  .btn-new{ background:var(--navy); color:#fff; border:none; border-radius:6px; font-family:'Oswald',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; font-size:13px; padding:11px 14px; cursor:pointer; }
+  .btn-new:hover{ background:var(--navy-2); }
+
+  .history-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-top:4px; }
+  .history-list{ display:flex; flex-direction:column; gap:6px; overflow-y:auto; max-height:52vh; }
+  .history-item{ background:#f7f9fb; border:1px solid var(--border); border-radius:6px; padding:9px 11px; cursor:pointer; }
+  .history-item:hover{ border-color:var(--navy); }
+  .history-item.active{ border-color:var(--navy); background:var(--sub-blue-bg); }
+  .hi-top{ display:flex; justify-content:space-between; align-items:baseline; }
+  .hi-name{ font-weight:600; font-size:13.5px; }
+  .hi-score{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; }
+  .hi-meta{ font-size:11px; color:var(--muted); margin-top:2px; }
+  .empty-hist{ color:var(--muted); font-size:12.5px; line-height:1.5; }
+
+  .export-row{ display:flex; gap:8px; margin-top:auto; padding-top:12px; border-top:1px solid var(--border); }
+  .btn-ghost{ flex:1; background:transparent; border:1px solid var(--border); color:var(--muted); border-radius:6px; padding:8px 10px; font-size:12px; cursor:pointer; }
+  .btn-ghost:hover{ color:var(--navy); border-color:var(--navy); }
+
+  .main{ padding:0 0 60px; }
+  .doc-header{ background:var(--navy); color:#fff; padding:22px 34px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+  .doc-header .brand-mark{ font-family:'Archivo Black',sans-serif; font-size:20px; line-height:1; }
+  .doc-header .brand-mark span{ display:block; font-size:20px; }
+  .doc-title{ font-family:'Oswald',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; font-size:19px; }
+  .score-badge{ text-align:center; }
+  .score-badge .val{ font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:600; }
+  .score-badge .lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.1em; opacity:0.8; }
+
+  .content{ padding:26px 34px; max-width:980px; }
+  @media (max-width: 900px){ .content{ padding:20px 18px; } .doc-header{ padding:18px 20px; } }
+
+  .id-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:0; border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:22px; background:var(--panel); }
+  .id-cell{ padding:10px 14px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); }
+  .id-cell:nth-child(2n){ border-right:none; }
+  .id-cell label{ display:block; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:5px; }
+  .id-cell input{ width:100%; border:1px solid var(--border); border-radius:5px; padding:7px 9px; font-size:14px; font-family:'Inter',sans-serif; }
+  .id-cell input:focus{ outline:none; border-color:var(--navy); }
+
+  .vtype-cell{ grid-column: 1 / -1; padding:12px 14px; display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
+  .vtype-cell > span{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; margin-right:6px; }
+  .vtype-opt{ display:flex; align-items:center; gap:6px; cursor:pointer; font-size:14px; }
+  .vtype-opt input{ width:16px; height:16px; accent-color:var(--navy); cursor:pointer; }
+
+  .section{ margin-bottom:22px; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--panel); }
+  .section-title-bar{ background:var(--navy); color:#fff; font-family:'Oswald',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; font-size:14px; padding:9px 14px; }
+  .group-title-bar{ background:var(--sub-blue-bg); color:var(--navy); font-weight:600; font-size:12.5px; padding:6px 14px; border-top:1px solid var(--border); border-bottom:1px solid var(--border); text-transform:uppercase; letter-spacing:0.02em; }
+
+  .col-head{ display:grid; grid-template-columns: 1fr 68px 68px 220px; background:var(--sub-blue-bg); color:var(--navy); font-size:11px; text-transform:uppercase; letter-spacing:0.05em; font-weight:600; }
+  .col-head > div{ padding:6px 10px; border-left:1px solid var(--border); }
+  .col-head > div:first-child{ border-left:none; }
+
+  .item-row{ display:grid; grid-template-columns: 1fr 68px 68px 220px; border-top:1px solid var(--border); align-items:center; }
+  .item-row:nth-child(odd){ background:#fafbfc; }
+  .item-label{ padding:8px 10px; font-size:13.5px; }
+  .chk-cell{ display:flex; align-items:center; justify-content:center; border-left:1px solid var(--border); height:100%; padding:6px 0; }
+  .chk-btn{ width:22px; height:22px; border:1.5px solid var(--border); border-radius:4px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; color:transparent; }
+  .chk-btn.ok-btn.sel{ background:var(--ok-bg); border-color:var(--ok); color:var(--ok); }
+  .chk-btn.bad-btn.sel{ background:var(--bad-bg); border-color:var(--bad); color:var(--bad); }
+  .obs-cell{ border-left:1px solid var(--border); padding:5px 8px; }
+  .obs-cell input{ width:100%; border:1px solid var(--border); border-radius:4px; padding:5px 7px; font-size:12px; font-family:'Inter',sans-serif; }
+  .obs-cell input:focus{ outline:none; border-color:var(--navy); }
+
+  @media (max-width: 700px){
+    .col-head, .item-row{ grid-template-columns: 1fr 52px 52px 140px; }
+  }
+
+  .conclusion-grid{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+  @media (max-width: 700px){ .conclusion-grid{ grid-template-columns: 1fr; } }
+  .conclusion-grid textarea, .full-textarea{ width:100%; border:1px solid var(--border); border-radius:6px; padding:9px 10px; font-family:'Inter',sans-serif; font-size:13px; resize:vertical; }
+  .conclusion-label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:5px; display:block; }
+  .full-textarea-wrap{ margin-bottom:14px; }
+
+  .sign-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:6px; }
+  @media (max-width: 700px){ .sign-grid{ grid-template-columns:1fr; } }
+  .sign-box{ border:1px solid var(--border); border-radius:8px; padding:14px; background:var(--panel); }
+  .sign-box h4{ margin:0 0 6px; font-size:13px; }
+  .sign-box p{ margin:0 0 10px; font-size:11.5px; color:var(--muted); font-style:italic; }
+  .sign-box input[type=text]{ width:100%; border:1px solid var(--border); border-radius:5px; padding:7px 9px; font-size:13.5px; margin-bottom:8px; }
+  .sign-check{ display:flex; align-items:center; gap:7px; font-size:12.5px; }
+  .sign-check input{ width:15px; height:15px; accent-color:var(--navy); }
+
+  .save-bar{ position:sticky; bottom:0; background:linear-gradient(0deg, var(--bg) 65%, transparent); padding-top:20px; margin-top:16px; display:flex; gap:10px; align-items:center; justify-content:flex-end; }
+  .save-status{ font-size:12px; color:var(--muted); margin-right:auto; }
+  .btn-save{ background:var(--navy); color:#fff; border:none; border-radius:6px; font-family:'Oswald',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; font-size:13.5px; padding:12px 22px; cursor:pointer; }
+  .btn-save:hover{ background:var(--navy-2); }
+  .btn-delete{ background:transparent; border:1px solid var(--bad); color:var(--bad); border-radius:6px; font-size:12.5px; padding:11px 16px; cursor:pointer; }
+  .btn-delete:hover{ background:var(--bad-bg); }
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:4px; }
+
+  .btn-pdf{ background:#fff; color:var(--navy); border:1.5px solid #fff; border-radius:6px; font-family:'Oswald',sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; font-size:12.5px; padding:9px 14px; cursor:pointer; }
+  .btn-pdf:hover{ background:var(--sub-blue-bg); }
+
+  @media print{
+    *{ -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    body{ background:#fff; }
+    .sidebar, .save-bar, .btn-pdf{ display:none !important; }
+    .app{ display:block; }
+    .main{ padding:0; }
+    .content{ padding:14px 20px; max-width:none; }
+    .doc-header{ padding:14px 20px; }
+    .section{ break-inside:avoid; margin-bottom:12px; }
+    .item-row{ break-inside:avoid; }
+    .id-grid{ break-inside:avoid; }
+    input, textarea{ border:1px solid #ccc !important; }
+    .chk-btn{ color:#000 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">TRANSPORTS<br>MESPLES<span>Audit conducteur</span></div>
+    <button class="btn-new" id="btnNew">+ Nouvel audit</button>
+    <div class="history-label">Historique</div>
+    <div class="history-list" id="historyList"></div>
+    <div class="export-row">
+      <button class="btn-ghost" id="btnExportAll">Export CSV (tout)</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="doc-header">
+      <div class="brand-mark"><span>TRANSPORTS</span><span>MESPLES</span></div>
+      <div class="doc-title">Rapport audit conducteur</div>
+      <div class="score-badge"><div class="val" id="scoreVal">—</div><div class="lbl">Conformité</div></div>
+      <button class="btn-pdf" id="btnPdf">Exporter en PDF</button>
+    </div>
+
+    <div class="content">
+      <div class="id-grid">
+        <div class="id-cell"><label>Nom-Prénom conducteur</label><input id="fConducteur"></div>
+        <div class="id-cell"><label>Rattaché à</label><input id="fRattache"></div>
+        <div class="id-cell"><label>Date de l'audit</label><input id="fDate" type="date"></div>
+        <div class="id-cell"><label>Nom-Prénom auditeur</label><input id="fAuditeur"></div>
+        <div class="id-cell"><label>Immatriculation tracteur</label><input id="fTracteur" placeholder="AB-123-CD"></div>
+        <div class="id-cell"><label>Immatriculation remorque</label><input id="fRemorque" placeholder="AB-123-CD"></div>
+        <div class="vtype-cell" id="vtypeCell"><span>Type de véhicule</span></div>
+      </div>
+
+      <div id="sections"></div>
+
+      <div class="section" style="margin-top:0;">
+        <div class="section-title-bar">Conclusion / remarques générales</div>
+        <div style="padding:14px;">
+          <div class="full-textarea-wrap">
+            <label class="conclusion-label">Commentaires et observations</label>
+            <textarea class="full-textarea" id="fCommentaires" rows="3"></textarea>
+          </div>
+          <div class="conclusion-grid">
+            <div><label class="conclusion-label">Points positifs</label><textarea id="fPositifs" rows="4"></textarea></div>
+            <div><label class="conclusion-label">Écarts</label><textarea id="fEcarts" rows="4"></textarea></div>
+            <div><label class="conclusion-label">Actions d'amélioration</label><textarea id="fActions" rows="4"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sign-grid">
+        <div class="sign-box">
+          <h4>Signature du conducteur</h4>
+          <p>J'atteste sur l'honneur être à jour avec mes documents obligatoires pour la conduite.</p>
+          <input type="text" id="fSignConducteur" placeholder="Nom du conducteur">
+          <label class="sign-check"><input type="checkbox" id="fAttesteConducteur"> Attestation recueillie</label>
+        </div>
+        <div class="sign-box">
+          <h4>Signature de l'auditeur</h4>
+          <p>Validation de l'audit réalisé.</p>
+          <input type="text" id="fSignAuditeur" placeholder="Nom de l'auditeur">
+          <label class="sign-check"><input type="checkbox" id="fAttesteAuditeur"> Audit validé</label>
+        </div>
+      </div>
+
+      <div class="save-bar">
+        <div class="save-status" id="saveStatus"></div>
+        <button class="btn-delete" id="btnDelete" style="display:none;">Supprimer</button>
+        <button class="btn-save" id="btnSave">Enregistrer l'audit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const VEHICLE_TYPES = ['Benne','Citerne pulvérulente','Ecovrac','Toupie'];
+
+const FIXED_TOP = [
+  { title:'Documents obligatoires', groups:[{ group:null, items:[
+    {label:'Carte ADR', hint:'Date expiration (jj/mm/aaaa)'},
+    {label:'Permis SPL / PL', hint:'Date expiration (jj/mm/aaaa)'},
+    {label:'Licence communautaire', hint:'N°'},
+    {label:'Assurance du véhicule', hint:'Date expiration (jj/mm/aaaa)'},
+    {label:'Carte grise du véhicule', hint:'Date expiration (jj/mm/aaaa)'}
+  ]}]},
+  { title:'EPI', groups:[{ group:null, items:[
+    {label:"Paire de chaussures de sécurité montantes et lacées jusqu'en haut"},
+    {label:'Paire de gants de manutention'},
+    {label:'Gilet fluorescent'},
+    {label:'Casque avec jugulaire'},
+    {label:'Paire de bottes étanches'},
+    {label:'Protection auditive'},
+    {label:'Combinaison étanche'},
+    {label:'Veste ou bleu de travail'},
+    {label:'Combinaison ATEX'}
+  ]}]},
+  { title:'ADR', groups:[{ group:null, items:[
+    {label:'Paire de gants en matière plastique'},
+    {label:'Paire de lunettes de protection'},
+    {label:"Rince œil / bouteille d'eau", hint:'Date expiration (jj/mm/aaaa)'},
+    {label:'Réservoir collecteur en plastique'},
+    {label:'Pelle'},
+    {label:'Sacs déchets vides'},
+    {label:"Protection de plaques d'égouts"},
+    {label:'Consignes écrites de sécurité ADR 2019 en couleur'},
+    {label:'1 lampe de poche', hint:'Test de fonctionnement'},
+    {label:'2 plaques orange ADR 300×400'},
+    {label:'2 plaques LQ'},
+    {label:'1 cale de roue - véhicule moteur'},
+    {label:'1 cale de roue - véhicule remorque'},
+    {label:"2 signaux d'avertissement autoporteurs (triangles, cônes)"}
+  ]}]},
+  { title:'Extincteurs', groups:[{ group:null, items:[
+    {label:'1 extincteur 2 kg plombé', hint:'Date expiration (jj/mm/aaaa)'},
+    {label:'2 extincteurs 6 kg plombés', hint:'Date expiration (jj/mm/aaaa)'}
+  ]}]}
+];
+
+const VEHICLE_SECTIONS = {
+  'Benne': [{ title:'Benne', groups:[{ group:null, items:[
+    {label:'Extincteurs accessibles'},
+    {label:'Système de bâchage conforme'},
+    {label:'Échelle conforme'},
+    {label:'Propreté générale conforme'},
+    {label:'Ouverture automatique des portes'}
+  ]}]}],
+  'Citerne pulvérulente': [{ title:'Citerne pulvérulente', groups:[
+    { group:'Équipements', items:[
+      {label:'Fonctionnement des soupapes (2 bars max)'},
+      {label:'Plombage des soupapes'},
+      {label:'Fonctionnement manomètre conforme'},
+      {label:'Rambardes déployables depuis le sol'},
+      {label:'Décompression depuis le sol'},
+      {label:'Masque à cartouche ABEKP', hint:'Date expiration (jj/mm/aaaa)'}
+    ]},
+    { group:'Certificats contrôles périodiques citernes (copie dans le véhicule)', items:[
+      {label:'SI – de 5 ans (contrôle garage)', hint:'Date expiration (jj/mm/aaaa)'}
+    ]},
+    { group:'Extérieur citerne', items:[
+      {label:'Propreté dôme (absence de résidus)'},
+      {label:'Propreté arrière (absence projections)'},
+      {label:'Propreté générale conforme'}
+    ]},
+    { group:'Accessoires citerne', items:[
+      {label:'Porte flexibles'},
+      {label:'Flexibles de dépotage'},
+      {label:'Flexibles de liaison (air)'},
+      {label:'Réductions x2'},
+      {label:'Pousseur'},
+      {label:'Fouet anti-retour x4'},
+      {label:'Coffres'},
+      {label:'Certificat de lavage'}
+    ]}
+  ]}],
+  'Toupie': [{ title:'Toupie béton', groups:[
+    { group:'Cuve à eau / alimentation en eau', items:[
+      {label:'Niveau cuve à eau suffisant', hint:'Volume relevé (L)'},
+      {label:'Pompe à eau fonctionnelle'},
+      {label:'Tuyaux et raccords étanches'}
+    ]},
+    { group:'Accès sécurisé', items:[
+      {label:"Rambarde d'accès conforme"},
+      {label:"Échelle d'accès en bon état"},
+      {label:'Signaux lumineux fonctionnels'},
+      {label:'Zones antidérapantes présentes'},
+      {label:'Absence de risque de chute en hauteur'}
+    ]},
+    { group:'Signalisation', items:[
+      {label:'Cales roues véhicule'},
+      {label:'Caméra de recul fonctionnelle'},
+      {label:'Signaux lumineux fonctionnels'},
+      {label:'Avertisseur sonore de recul'}
+    ]},
+    { group:'Goulotte et accessoires', items:[
+      {label:'Goulotte propre et en bon état'},
+      {label:'Système de verrouillage goulotte'},
+      {label:'Extensions de goulotte présentes et conformes'},
+      {label:'Absence de risque de chute des éléments'}
+    ]},
+    { group:'Commande et fonctionnement', items:[
+      {label:'Commandes de rotation accessibles et fonctionnelles'},
+      {label:"Arrêt d'urgence fonctionnel"},
+      {label:'Absence de fuite hydraulique'},
+      {label:'Propreté interne de la cuve (absence de béton durci excessif)'}
+    ]}
+  ]}],
+  'Ecovrac': [{ title:'Ecovrac', groups:[
+    { group:'Hygiène générale', items:[
+      {label:'Propreté extérieure de la citerne'},
+      {label:'Soufflette fonctionnelle'},
+      {label:'Vérifier le système de désinfection châssis et bas de caisse (roue)'},
+      {label:"Absence d'odeur anormale"},
+      {label:'Fumigation réalisée (1x/mois)'}
+    ]},
+    { group:'Intérieur citerne', items:[
+      {label:'Intérieur propre (dernier lavage conforme)'},
+      {label:'Absence de résidus ou corps étrangers'}
+    ]},
+    { group:'Certificats et traçabilité', items:[
+      {label:'Traçabilité des produits transportés'},
+      {label:'Système de purge'},
+      {label:"Essai d'écofan"}
+    ]},
+    { group:'Accessoires', items:[
+      {label:'Présence de flexibles'},
+      {label:'Raccordements propres et protégés'},
+      {label:'Présence de capuchons de protection'},
+      {label:'Absence de fuite'}
+    ]},
+    { group:'Sécurité opérations', items:[
+      {label:'Rambarde ou système anti-chute conforme'},
+      {label:'Accès en hauteur sécurisé'},
+      {label:'Déchargement possible sans risque'},
+      {label:'Manette de commande à distance fonctionnelle'}
+    ]},
+    { group:"Sécurité opérations (arrêt d'urgence)", items:[
+      {label:"Arrêt d'urgence opérationnel"},
+      {label:'Présence de la procédure livraison aliment en vrac'},
+      {label:'Application ALIA TOUR fonctionnelle et connue'}
+    ]}
+  ]}]
+};
+
+const OBS_GENERALES = { title:'Observations générales conducteur', statusLabels:['OK','PAS OK'], groups:[{ group:null, items:[
+  {label:'État et propreté cabine'},
+  {label:"Connaissance de la conduite à tenir en cas d'incendie"},
+  {label:"Connaissance de la conduite à tenir en cas d'accident"},
+  {label:'Connaissance des consignes ATEX'},
+  {label:'EPI portés et en bon état'},
+  {label:'Comportement sécurité du personnel satisfaisant'},
+  {label:'Respect des procédures et des consignes'},
+  {label:"Matériel n'appartenant pas à l'entreprise"},
+  {label:"Comportement conducteur face à l'audit"}
+]}]};
+
+let currentId = null;
+let currentStatuses = {};
+let currentObs = {};
+let currentVehicleType = '';
+let index = [];
+
+const $ = (sel) => document.querySelector(sel);
+
+// Stockage: utilise window.storage s'il est disponible (aperçu Claude),
+// sinon repli sur localStorage (fichier ouvert directement dans le navigateur).
+const hasClaudeStorage = (typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+const store = {
+  async get(key){
+    if(hasClaudeStorage){
+      try{ return await window.storage.get(key, false); }catch(e){ return null; }
+    }
+    const v = localStorage.getItem('mesples_' + key);
+    return v === null ? null : { key, value: v, shared:false };
+  },
+  async set(key, value){
+    if(hasClaudeStorage){
+      return await window.storage.set(key, value, false);
+    }
+    localStorage.setItem('mesples_' + key, value);
+    return { key, value, shared:false };
+  },
+  async delete(key){
+    if(hasClaudeStorage){
+      try{ return await window.storage.delete(key, false); }catch(e){ return null; }
+    }
+    localStorage.removeItem('mesples_' + key);
+    return { key, deleted:true, shared:false };
+  }
+};
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function buildVtypeOptions(){
+  const cell = $('#vtypeCell');
+  cell.querySelectorAll('.vtype-opt').forEach(e => e.remove());
+  VEHICLE_TYPES.forEach(t => {
+    const lbl = document.createElement('label');
+    lbl.className = 'vtype-opt';
+    const inp = document.createElement('input');
+    inp.type = 'radio'; inp.name = 'vtype'; inp.value = t;
+    inp.checked = currentVehicleType === t;
+    inp.addEventListener('change', () => { currentVehicleType = t; renderSections(); updateScore(); });
+    lbl.appendChild(inp);
+    lbl.appendChild(document.createTextNode(t));
+    cell.appendChild(lbl);
+  });
+}
+
+function renderSectionBlock(sectionDef, keyPrefix){
+  const statusLabels = sectionDef.statusLabels || ['OUI','NON'];
+  const sec = document.createElement('div');
+  sec.className = 'section';
+  const bar = document.createElement('div');
+  bar.className = 'section-title-bar';
+  bar.textContent = sectionDef.title;
+  sec.appendChild(bar);
+
+  sectionDef.groups.forEach((grp, gIdx) => {
+    if(grp.group){
+      const gbar = document.createElement('div');
+      gbar.className = 'group-title-bar';
+      gbar.textContent = grp.group;
+      sec.appendChild(gbar);
+    }
+    const head = document.createElement('div');
+    head.className = 'col-head';
+    head.innerHTML = `<div></div><div>${statusLabels[0]}</div><div>${statusLabels[1]}</div><div>Observations</div>`;
+    sec.appendChild(head);
+
+    grp.items.forEach((item, iIdx) => {
+      const key = keyPrefix + '::' + gIdx + '::' + iIdx;
+      const row = document.createElement('div');
+      row.className = 'item-row';
+
+      const labelCell = document.createElement('div');
+      labelCell.className = 'item-label';
+      labelCell.textContent = item.label;
+      row.appendChild(labelCell);
+
+      const okCell = document.createElement('div');
+      okCell.className = 'chk-cell';
+      const okBtn = document.createElement('button');
+      okBtn.className = 'chk-btn ok-btn';
+      okBtn.textContent = '✓';
+      okBtn.type = 'button';
+      okCell.appendChild(okBtn);
+      row.appendChild(okCell);
+
+      const badCell = document.createElement('div');
+      badCell.className = 'chk-cell';
+      const badBtn = document.createElement('button');
+      badBtn.className = 'chk-btn bad-btn';
+      badBtn.textContent = '✕';
+      badBtn.type = 'button';
+      badCell.appendChild(badBtn);
+      row.appendChild(badCell);
+
+      const obsCell = document.createElement('div');
+      obsCell.className = 'obs-cell';
+      const obsInput = document.createElement('input');
+      obsInput.type = 'text';
+      obsInput.placeholder = item.hint || '';
+      obsInput.value = currentObs[key] || '';
+      obsInput.addEventListener('input', () => { currentObs[key] = obsInput.value; });
+      obsCell.appendChild(obsInput);
+      row.appendChild(obsCell);
+
+      function refresh(){
+        okBtn.classList.toggle('sel', currentStatuses[key] === 'ok');
+        badBtn.classList.toggle('sel', currentStatuses[key] === 'bad');
+      }
+      okBtn.addEventListener('click', () => { currentStatuses[key] = currentStatuses[key]==='ok' ? null : 'ok'; refresh(); updateScore(); });
+      badBtn.addEventListener('click', () => { currentStatuses[key] = currentStatuses[key]==='bad' ? null : 'bad'; refresh(); updateScore(); });
+      refresh();
+
+      sec.appendChild(row);
+    });
+  });
+  return sec;
+}
+
+function renderSections(){
+  const wrap = $('#sections');
+  wrap.innerHTML = '';
+  FIXED_TOP.forEach((sec, sIdx) => wrap.appendChild(renderSectionBlock(sec, 'top' + sIdx)));
+  if(currentVehicleType && VEHICLE_SECTIONS[currentVehicleType]){
+    VEHICLE_SECTIONS[currentVehicleType].forEach((sec, sIdx) => wrap.appendChild(renderSectionBlock(sec, 'veh' + sIdx)));
+  }
+  wrap.appendChild(renderSectionBlock(OBS_GENERALES, 'obs0'));
+}
+
+function computeScore(){
+  let ok=0, bad=0;
+  Object.values(currentStatuses).forEach(s => { if(s==='ok') ok++; else if(s==='bad') bad++; });
+  const total = ok+bad;
+  if(total===0) return null;
+  return Math.round((ok/total)*100);
+}
+
+function updateScore(){
+  const score = computeScore();
+  const el = $('#scoreVal');
+  el.textContent = score===null ? '—' : score+'%';
+  el.style.color = score===null ? '#fff' : (score>=85 ? '#8ee6a8' : score>=60 ? '#ffd27a' : '#ff9b9b');
+}
+
+function newAudit(){
+  currentId = 'audit_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+  currentStatuses = {};
+  currentObs = {};
+  currentVehicleType = '';
+  ['fConducteur','fRattache','fTracteur','fRemorque','fCommentaires','fPositifs','fEcarts','fActions','fSignConducteur','fSignAuditeur'].forEach(id => $('#'+id).value = '');
+  $('#fDate').value = new Date().toISOString().slice(0,10);
+  $('#fAuditeur').value = '';
+  $('#fAttesteConducteur').checked = false;
+  $('#fAttesteAuditeur').checked = false;
+  $('#btnDelete').style.display = 'none';
+  $('#saveStatus').textContent = '';
+  buildVtypeOptions();
+  renderSections();
+  updateScore();
+  highlightActiveHistory();
+}
+
+async function loadIndex(){
+  try{
+    const res = await store.get('audit-index');
+    index = res ? JSON.parse(res.value) : [];
+  }catch(e){ index = []; }
+  renderHistory();
+}
+
+function renderHistory(){
+  const list = $('#historyList');
+  if(index.length === 0){
+    list.innerHTML = '<div class="empty-hist">Aucun audit enregistré pour le moment.</div>';
+    return;
+  }
+  const sorted = [...index].sort((a,b) => b.savedAt - a.savedAt);
+  list.innerHTML = '';
+  sorted.forEach(entry => {
+    const el = document.createElement('div');
+    el.className = 'history-item' + (entry.id === currentId ? ' active' : '');
+    let color = '#667485';
+    if(entry.score !== null){ color = entry.score>=85 ? '#1f9d55' : entry.score>=60 ? '#c98a1f' : '#d64545'; }
+    el.innerHTML = `
+      <div class="hi-top">
+        <span class="hi-name">${escapeHtml(entry.conducteur || 'Sans nom')}</span>
+        <span class="hi-score" style="color:${color}">${entry.score===null ? '—' : entry.score+'%'}</span>
+      </div>
+      <div class="hi-meta">${entry.date || ''} · ${escapeHtml(entry.vehicleType || '')}</div>
+    `;
+    el.addEventListener('click', () => loadAudit(entry.id));
+    list.appendChild(el);
+  });
+}
+
+function highlightActiveHistory(){ renderHistory(); }
+
+async function loadAudit(id){
+  try{
+    const res = await store.get('audit:' + id);
+    if(!res) return;
+    const data = JSON.parse(res.value);
+    currentId = id;
+    currentStatuses = data.statuses || {};
+    currentObs = data.obs || {};
+    currentVehicleType = data.vehicleType || '';
+    $('#fConducteur').value = data.conducteur || '';
+    $('#fRattache').value = data.rattache || '';
+    $('#fDate').value = data.date || '';
+    $('#fAuditeur').value = data.auditeur || '';
+    $('#fTracteur').value = data.tracteur || '';
+    $('#fRemorque').value = data.remorque || '';
+    $('#fCommentaires').value = data.commentaires || '';
+    $('#fPositifs').value = data.positifs || '';
+    $('#fEcarts').value = data.ecarts || '';
+    $('#fActions').value = data.actions || '';
+    $('#fSignConducteur').value = data.signConducteur || '';
+    $('#fSignAuditeur').value = data.signAuditeur || '';
+    $('#fAttesteConducteur').checked = !!data.attesteConducteur;
+    $('#fAttesteAuditeur').checked = !!data.attesteAuditeur;
+    $('#btnDelete').style.display = 'inline-block';
+    $('#saveStatus').textContent = 'Enregistré le ' + new Date(data.savedAt).toLocaleString('fr-FR');
+    buildVtypeOptions();
+    renderSections();
+    updateScore();
+    highlightActiveHistory();
+  }catch(e){ console.error('Erreur chargement audit', e); }
+}
+
+async function saveAudit(){
+  const data = {
+    conducteur: $('#fConducteur').value.trim(),
+    rattache: $('#fRattache').value.trim(),
+    date: $('#fDate').value,
+    auditeur: $('#fAuditeur').value.trim(),
+    tracteur: $('#fTracteur').value.trim(),
+    remorque: $('#fRemorque').value.trim(),
+    vehicleType: currentVehicleType,
+    statuses: currentStatuses,
+    obs: currentObs,
+    commentaires: $('#fCommentaires').value,
+    positifs: $('#fPositifs').value,
+    ecarts: $('#fEcarts').value,
+    actions: $('#fActions').value,
+    signConducteur: $('#fSignConducteur').value.trim(),
+    signAuditeur: $('#fSignAuditeur').value.trim(),
+    attesteConducteur: $('#fAttesteConducteur').checked,
+    attesteAuditeur: $('#fAttesteAuditeur').checked,
+    score: computeScore(),
+    savedAt: Date.now()
+  };
+  try{
+    await store.set('audit:' + currentId, JSON.stringify(data));
+    const existingIdx = index.findIndex(e => e.id === currentId);
+    const entry = { id: currentId, conducteur: data.conducteur, vehicleType: data.vehicleType, date: data.date, score: data.score, savedAt: data.savedAt };
+    if(existingIdx >= 0) index[existingIdx] = entry; else index.push(entry);
+    await store.set('audit-index', JSON.stringify(index));
+    $('#saveStatus').textContent = 'Enregistré le ' + new Date(data.savedAt).toLocaleString('fr-FR');
+    $('#btnDelete').style.display = 'inline-block';
+    renderHistory();
+    highlightActiveHistory();
+  }catch(e){
+    $('#saveStatus').textContent = "Erreur d'enregistrement.";
+    console.error(e);
+  }
+}
+
+async function deleteAudit(){
+  if(!currentId) return;
+  if(!confirm('Supprimer définitivement cet audit ?')) return;
+  try{
+    await store.delete('audit:' + currentId);
+    index = index.filter(e => e.id !== currentId);
+    await store.set('audit-index', JSON.stringify(index));
+    newAudit();
+  }catch(e){ console.error(e); }
+}
+
+function flattenSectionForCsv(sectionDef, keyPrefix, data, out){
+  sectionDef.groups.forEach((grp, gIdx) => {
+    grp.items.forEach((item, iIdx) => {
+      const key = keyPrefix + '::' + gIdx + '::' + iIdx;
+      const st = data.statuses[key];
+      const stLabel = st==='ok' ? (sectionDef.statusLabels ? sectionDef.statusLabels[0] : 'OUI') : st==='bad' ? (sectionDef.statusLabels ? sectionDef.statusLabels[1] : 'NON') : '';
+      const obs = data.obs[key] || '';
+      out.push(`"${item.label.replace(/"/g,'""')}: ${stLabel}${obs ? ' ('+obs.replace(/"/g,'""')+')' : ''}"`);
+    });
+  });
+}
+
+function toCsvRow(data){
+  const flat = [];
+  FIXED_TOP.forEach((sec, sIdx) => flattenSectionForCsv(sec, 'top'+sIdx, data, flat));
+  if(data.vehicleType && VEHICLE_SECTIONS[data.vehicleType]){
+    VEHICLE_SECTIONS[data.vehicleType].forEach((sec, sIdx) => flattenSectionForCsv(sec, 'veh'+sIdx, data, flat));
+  }
+  flattenSectionForCsv(OBS_GENERALES, 'obs0', data, flat);
+  return [data.conducteur, data.vehicleType, data.date, data.tracteur, data.remorque, data.score!==null?data.score+'%':'', ...flat].join(';');
+}
+
+async function exportAll(){
+  if(index.length === 0){ alert('Aucun audit à exporter.'); return; }
+  const rows = ['Conducteur;Type véhicule;Date;Tracteur;Remorque;Score;Détail'];
+  for(const entry of index){
+    try{
+      const res = await store.get('audit:' + entry.id);
+      if(res){ rows.push(toCsvRow(JSON.parse(res.value))); }
+    }catch(e){}
+  }
+  const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'audits_conducteur_mesples_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+$('#btnNew').addEventListener('click', newAudit);
+$('#btnSave').addEventListener('click', saveAudit);
+$('#btnDelete').addEventListener('click', deleteAudit);
+$('#btnExportAll').addEventListener('click', exportAll);
+$('#btnPdf').addEventListener('click', () => {
+  const conducteur = $('#fConducteur').value.trim() || 'audit';
+  const date = $('#fDate').value || new Date().toISOString().slice(0,10);
+  const prevTitle = document.title;
+  document.title = 'Audit_' + conducteur.replace(/\s+/g,'_') + '_' + date;
+  window.print();
+  document.title = prevTitle;
+});
+
+(async function init(){
+  await loadIndex();
+  newAudit();
+})();
+</script>
+</body>
+</html>
