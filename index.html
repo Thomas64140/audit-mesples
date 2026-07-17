@@ -303,6 +303,7 @@ const VEHICLE_TYPES = ['Benne','Citerne pulvérulente','Ecovrac','Toupie'];
 const FIXED_TOP = [
   { title:'Documents obligatoires', groups:[{ group:null, items:[
     {label:'Carte ADR', hint:'Date expiration (jj/mm/aaaa)'},
+    {label:'CMR IDTF'},
     {label:'Permis SPL / PL', hint:'Date expiration (jj/mm/aaaa)'},
     {label:'Licence communautaire', hint:'N°'},
     {label:'Assurance du véhicule', hint:'Date expiration (jj/mm/aaaa)'},
@@ -344,7 +345,9 @@ const FIXED_TOP = [
 const VEHICLE_SECTIONS = {
   'Benne': [{ title:'Benne', groups:[{ group:null, items:[
     {label:'Extincteurs accessibles'},
+    {label:'Entretien avant chargement'},
     {label:'Système de bâchage conforme'},
+    {label:'Chaîne de porte'},
     {label:'Échelle conforme'},
     {label:'Propreté générale conforme'},
     {label:'Ouverture automatique des portes'}
@@ -355,6 +358,7 @@ const VEHICLE_SECTIONS = {
       {label:'Plombage des soupapes'},
       {label:'Fonctionnement manomètre conforme'},
       {label:'Rambardes déployables depuis le sol'},
+      {label:'Entretien avant chargement'},
       {label:'Décompression depuis le sol'},
       {label:'Masque à cartouche ABEKP', hint:'Date expiration (jj/mm/aaaa)'}
     ]},
