@@ -100,6 +100,20 @@
   .obs-cell input{ width:100%; border:1px solid var(--border); border-radius:4px; padding:5px 7px; font-size:12px; font-family:'Inter',sans-serif; }
   .obs-cell input:focus{ outline:none; border-color:var(--navy); }
 
+  .photo-btns{ display:flex; gap:4px; margin-top:5px; flex-wrap:wrap; }
+  .photo-btn{ flex:1; min-width:70px; font-size:10.5px; padding:4px 5px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--navy); cursor:pointer; font-family:'Inter',sans-serif; }
+  .photo-btn.has-photo{ background:#e6f6ec; border-color:#1f9d55; color:#1f9d55; font-weight:600; }
+  .photo-btn:hover{ background:var(--sub-blue-bg); }
+
+  .photos-annex:empty{ display:none; }
+  .photos-annex{ margin-top:20px; padding-top:16px; border-top:1px solid var(--border); }
+  .photos-annex h4{ font-family:'Archivo Black',sans-serif; font-size:15px; color:var(--navy); margin:0 0 12px; }
+  .photos-annex .photo-set{ margin-bottom:16px; }
+  .photos-annex .photo-set h5{ font-size:12.5px; font-weight:600; color:var(--navy); margin:0 0 8px; }
+  .photos-annex .photo-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:640px; }
+  .photos-annex .photo-item img{ width:100%; display:block; border-radius:6px; border:1px solid var(--border); }
+  .photos-annex .photo-item .cap{ font-size:11px; color:#667485; margin-top:4px; text-align:center; }
+
   @media (max-width: 700px){
     .col-head, .item-row{ grid-template-columns: 1fr 52px 52px 140px; }
   }
@@ -153,6 +167,7 @@
     .section{ break-inside:avoid; margin-bottom:12px; }
     .item-row{ break-inside:avoid; }
     .id-grid{ break-inside:avoid; }
+    .photo-set{ break-inside:avoid; }
     input, textarea{ border:1px solid #ccc !important; }
     .chk-btn{ color:#000 !important; }
   }
@@ -282,6 +297,8 @@
         </div>
       </div>
 
+      <div class="photos-annex" id="photosAnnex"></div>
+
       <div class="save-bar hide-for-pdf">
         <div class="save-status" id="saveStatus"></div>
         <button class="btn-delete" id="btnDelete" style="display:none;">Supprimer</button>
@@ -309,7 +326,8 @@ const FIXED_TOP = [
     {label:'Permis SPL / PL', hint:'Date expiration (jj/mm/aaaa)'},
     {label:'Licence communautaire', hint:'N°'},
     {label:'Assurance du véhicule', hint:'Date expiration (jj/mm/aaaa)'},
-    {label:'Carte grise du véhicule', hint:'Date expiration (jj/mm/aaaa)'}
+    {label:'Carte grise du véhicule', hint:'Date expiration (jj/mm/aaaa)'},
+    {label:'Dernier passage au contrôle technique valide ?', hint:'Date de validité (jj/mm/aaaa)', photos:true}
   ]}]},
   { title:'EPI', groups:[{ group:null, items:[
     {label:"Paire de chaussures de sécurité montantes et lacées jusqu'en haut"},
@@ -467,6 +485,8 @@ const OBS_GENERALES = { title:'Observations générales conducteur', statusLabel
 let currentId = null;
 let currentStatuses = {};
 let currentObs = {};
+let currentPhotos = {};
+let photoRegistry = [];
 let currentVehicleType = '';
 let index = [];
 
@@ -714,6 +734,42 @@ function renderSectionBlock(sectionDef, keyPrefix){
       obsInput.value = currentObs[key] || '';
       obsInput.addEventListener('input', () => { currentObs[key] = obsInput.value; });
       obsCell.appendChild(obsInput);
+
+      if(item.photos){
+        photoRegistry.push({key, label:item.label});
+        const photoWrap = document.createElement('div');
+        photoWrap.className = 'photo-btns hide-for-pdf';
+        [1,2].forEach(n => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'photo-btn';
+          const already = currentPhotos[key] && currentPhotos[key]['photo'+n];
+          btn.textContent = already ? '✓ Photo ' + n : '📷 Photo ' + n;
+          btn.classList.toggle('has-photo', !!already);
+          const fileInput = document.createElement('input');
+          fileInput.type = 'file';
+          fileInput.accept = 'image/*';
+          fileInput.capture = 'environment';
+          fileInput.style.display = 'none';
+          fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if(!file) return;
+            try{
+              const dataUrl = await compressImage(file);
+              if(!currentPhotos[key]) currentPhotos[key] = {};
+              currentPhotos[key]['photo' + n] = dataUrl;
+              btn.textContent = '✓ Photo ' + n;
+              btn.classList.add('has-photo');
+              renderPhotosAnnex();
+            }catch(err){ console.error('Erreur photo', err); alert("Impossible de charger cette photo."); }
+          });
+          btn.addEventListener('click', () => fileInput.click());
+          photoWrap.appendChild(btn);
+          photoWrap.appendChild(fileInput);
+        });
+        obsCell.appendChild(photoWrap);
+      }
+
       row.appendChild(obsCell);
 
       function refresh(){
@@ -730,14 +786,54 @@ function renderSectionBlock(sectionDef, keyPrefix){
   return sec;
 }
 
+function compressImage(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 1200;
+        const scale = Math.min(1, maxW / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.72));
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPhotosAnnex(){
+  const el = $('#photosAnnex');
+  if(!el) return;
+  let html = '';
+  photoRegistry.forEach(entry => {
+    const p = currentPhotos[entry.key];
+    if(!p || (!p.photo1 && !p.photo2)) return;
+    html += `<div class="photo-set"><h5>${escapeHtml(entry.label)}</h5><div class="photo-grid">`;
+    if(p.photo1) html += `<div class="photo-item"><img src="${p.photo1}"><div class="cap">Photo 1</div></div>`;
+    if(p.photo2) html += `<div class="photo-item"><img src="${p.photo2}"><div class="cap">Photo 2</div></div>`;
+    html += `</div></div>`;
+  });
+  el.innerHTML = html ? '<h4>Pièces jointes photo</h4>' + html : '';
+}
+
 function renderSections(){
   const wrap = $('#sections');
   wrap.innerHTML = '';
+  photoRegistry = [];
   FIXED_TOP.forEach((sec, sIdx) => wrap.appendChild(renderSectionBlock(sec, 'top' + sIdx)));
   if(currentVehicleType && VEHICLE_SECTIONS[currentVehicleType]){
     VEHICLE_SECTIONS[currentVehicleType].forEach((sec, sIdx) => wrap.appendChild(renderSectionBlock(sec, 'veh' + sIdx)));
   }
   wrap.appendChild(renderSectionBlock(OBS_GENERALES, 'obs0'));
+  renderPhotosAnnex();
 }
 
 function computeScore(){
@@ -759,6 +855,7 @@ function newAudit(){
   currentId = 'audit_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
   currentStatuses = {};
   currentObs = {};
+  currentPhotos = {};
   currentVehicleType = '';
   ['fConducteur','fRattache','fTracteur','fRemorque','fCommentaires','fPositifs','fEcarts','fActions','fSignConducteur','fSignAuditeur','fLettrePrenom','fLettreNom','fSiteAudit','fAdresseRue','fAdresseVille','fRedacteurNom','fRedacteurFonction','fRemarquesLettre'].forEach(id => $('#'+id).value = '');
   $('#fLettreCivilite').value = 'Monsieur';
@@ -818,6 +915,7 @@ async function loadAudit(id){
     currentId = id;
     currentStatuses = data.statuses || {};
     currentObs = data.obs || {};
+    currentPhotos = data.photos || {};
     currentVehicleType = data.vehicleType || '';
     $('#fConducteur').value = data.conducteur || '';
     $('#fRattache').value = data.rattache || '';
@@ -869,6 +967,7 @@ async function saveAudit(){
     vehicleType: currentVehicleType,
     statuses: currentStatuses,
     obs: currentObs,
+    photos: currentPhotos,
     commentaires: $('#fCommentaires').value,
     positifs: $('#fPositifs').value,
     ecarts: $('#fEcarts').value,
