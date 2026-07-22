@@ -1018,7 +1018,7 @@ function printElementInNewWindow(sourceElement, title){
 $('#btnPdf').addEventListener('click', () => {
   const conducteur = $('#fConducteur').value.trim() || 'audit';
   const date = $('#fDate').value || new Date().toISOString().slice(0,10);
-  printElementInNewWindow(document.querySelector('.content'), 'Audit_' + conducteur.replace(/\s+/g,'_') + '_' + date);
+  printElementInNewWindow(document.querySelector('.main'), 'Audit_' + conducteur.replace(/\s+/g,'_') + '_' + date);
 });
 
 // ---- Lettre de suivi ----
