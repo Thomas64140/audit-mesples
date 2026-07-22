@@ -100,8 +100,8 @@
   .obs-cell input{ width:100%; border:1px solid var(--border); border-radius:4px; padding:5px 7px; font-size:12px; font-family:'Inter',sans-serif; }
   .obs-cell input:focus{ outline:none; border-color:var(--navy); }
 
-  .photo-btns{ display:flex; gap:4px; margin-top:5px; flex-wrap:wrap; }
-  .photo-btn{ flex:1; min-width:70px; font-size:10.5px; padding:4px 5px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--navy); cursor:pointer; font-family:'Inter',sans-serif; }
+  .photo-btns{ display:flex; gap:3px; margin-top:5px; flex-wrap:wrap; }
+  .photo-btn{ flex:0 0 auto; min-width:30px; font-size:11px; padding:4px 5px; border:1px solid var(--border); border-radius:4px; background:#fff; color:var(--navy); cursor:pointer; font-family:'Inter',sans-serif; }
   .photo-btn.has-photo{ background:#e6f6ec; border-color:#1f9d55; color:#1f9d55; font-weight:600; }
   .photo-btn:hover{ background:var(--sub-blue-bg); }
 
@@ -327,7 +327,7 @@ const FIXED_TOP = [
     {label:'Licence communautaire', hint:'N°'},
     {label:'Assurance du véhicule', hint:'Date expiration (jj/mm/aaaa)'},
     {label:'Carte grise du véhicule', hint:'Date expiration (jj/mm/aaaa)'},
-    {label:'Dernier passage au contrôle technique valide ?', hint:'Date de validité (jj/mm/aaaa)', photos:true}
+    {label:'Dernier passage au contrôle technique valide ?', hint:'Date de validité (jj/mm/aaaa)', photos:2}
   ]}]},
   { title:'EPI', groups:[{ group:null, items:[
     {label:"Paire de chaussures de sécurité montantes et lacées jusqu'en haut"},
@@ -371,7 +371,12 @@ const VEHICLE_SECTIONS = {
     {label:'Échelle conforme'},
     {label:'Propreté générale conforme'},
     {label:'Ouverture automatique des portes'}
-  ]}]}],
+  ]},
+  { group:'Propreté (photos)', items:[
+    {label:'État intérieur remorque', photos:5},
+    {label:'État extérieur ensemble', photos:5}
+  ]}
+  ]}],
   'Citerne pulvérulente': [{ title:'Citerne pulvérulente', groups:[
     { group:'Équipements', items:[
       {label:'Fonctionnement des soupapes (2 bars max)'},
@@ -399,6 +404,10 @@ const VEHICLE_SECTIONS = {
       {label:'Fouet anti-retour x4'},
       {label:'Coffres'},
       {label:'Certificat de lavage'}
+    ]},
+    { group:'Propreté (photos)', items:[
+      {label:'État intérieur remorque', photos:5},
+      {label:'État extérieur ensemble', photos:5}
     ]}
   ]}],
   'Toupie': [{ title:'Toupie béton', groups:[
@@ -431,6 +440,10 @@ const VEHICLE_SECTIONS = {
       {label:"Arrêt d'urgence fonctionnel"},
       {label:'Absence de fuite hydraulique'},
       {label:'Propreté interne de la cuve (absence de béton durci excessif)'}
+    ]},
+    { group:'Propreté (photos)', items:[
+      {label:'État intérieur remorque', photos:5},
+      {label:'État extérieur ensemble', photos:5}
     ]}
   ]}],
   'Ecovrac': [{ title:'Ecovrac', groups:[
@@ -466,6 +479,10 @@ const VEHICLE_SECTIONS = {
       {label:"Arrêt d'urgence opérationnel"},
       {label:'Présence de la procédure livraison aliment en vrac'},
       {label:'Application ALIA TOUR fonctionnelle et connue'}
+    ]},
+    { group:'Propreté (photos)', items:[
+      {label:'État intérieur remorque', photos:5},
+      {label:'État extérieur ensemble', photos:5}
     ]}
   ]}]
 };
@@ -739,12 +756,13 @@ function renderSectionBlock(sectionDef, keyPrefix){
         photoRegistry.push({key, label:item.label});
         const photoWrap = document.createElement('div');
         photoWrap.className = 'photo-btns hide-for-pdf';
-        [1,2].forEach(n => {
+        for(let n = 1; n <= item.photos; n++){
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'photo-btn';
+          btn.title = 'Photo ' + n;
           const already = currentPhotos[key] && currentPhotos[key]['photo'+n];
-          btn.textContent = already ? '✓ Photo ' + n : '📷 Photo ' + n;
+          btn.textContent = already ? ('✓' + n) : ('📷' + n);
           btn.classList.toggle('has-photo', !!already);
           const fileInput = document.createElement('input');
           fileInput.type = 'file';
@@ -758,7 +776,7 @@ function renderSectionBlock(sectionDef, keyPrefix){
               const dataUrl = await compressImage(file);
               if(!currentPhotos[key]) currentPhotos[key] = {};
               currentPhotos[key]['photo' + n] = dataUrl;
-              btn.textContent = '✓ Photo ' + n;
+              btn.textContent = '✓' + n;
               btn.classList.add('has-photo');
               renderPhotosAnnex();
             }catch(err){ console.error('Erreur photo', err); alert("Impossible de charger cette photo."); }
@@ -766,7 +784,7 @@ function renderSectionBlock(sectionDef, keyPrefix){
           btn.addEventListener('click', () => fileInput.click());
           photoWrap.appendChild(btn);
           photoWrap.appendChild(fileInput);
-        });
+        }
         obsCell.appendChild(photoWrap);
       }
 
@@ -815,10 +833,13 @@ function renderPhotosAnnex(){
   let html = '';
   photoRegistry.forEach(entry => {
     const p = currentPhotos[entry.key];
-    if(!p || (!p.photo1 && !p.photo2)) return;
+    if(!p) return;
+    const nums = Object.keys(p).filter(k => p[k]).sort((a,b) => parseInt(a.replace('photo','')) - parseInt(b.replace('photo','')));
+    if(!nums.length) return;
     html += `<div class="photo-set"><h5>${escapeHtml(entry.label)}</h5><div class="photo-grid">`;
-    if(p.photo1) html += `<div class="photo-item"><img src="${p.photo1}"><div class="cap">Photo 1</div></div>`;
-    if(p.photo2) html += `<div class="photo-item"><img src="${p.photo2}"><div class="cap">Photo 2</div></div>`;
+    nums.forEach((k, i) => {
+      html += `<div class="photo-item"><img src="${p[k]}"><div class="cap">Photo ${i+1}</div></div>`;
+    });
     html += `</div></div>`;
   });
   el.innerHTML = html ? '<h4>Pièces jointes photo</h4>' + html : '';
