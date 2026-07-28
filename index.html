@@ -248,7 +248,7 @@
       </div>
 
       <div class="section" style="margin-top:0;">
-        <div class="section-title-bar">Lettre de suivi (envoi au chauffeur)</div>
+        <div class="section-title-bar">information de suivi </div>
         <div style="padding:14px;">
           <div class="id-grid" style="margin-bottom:12px;">
             <div class="id-cell"><label>Civilité</label>
@@ -337,8 +337,8 @@ const FIXED_TOP = [
     {label:'Casque avec jugulaire'},
     {label:'Paire de lunettes de sécurité'},
     {label:'Protection auditive'},
-    {label:'Combinaison étanche'},
     {label:'Veste ou bleu de travail'},
+    {label:'Trousse de secours (Obligation Lafarge)'},
     {label:'Combinaison ATEX'}
   ]}]},
   { title:'ADR', groups:[{ group:null, items:[
@@ -368,6 +368,8 @@ const VEHICLE_SECTIONS = {
     {label:'Extincteurs accessibles'},
     {label:'Entretien avant chargement'},
     {label:'Système de bâchage conforme'},
+    {label:'Graissage / Entretien 2 mois'},
+    {label:'repartition du chargement'},
     {label:'Chaîne de porte'},
     {label:'Échelle conforme'},
     {label:'Propreté générale conforme'},
@@ -389,7 +391,7 @@ const VEHICLE_SECTIONS = {
       {label:'Masque à cartouche ABEKP', hint:'Date expiration (jj/mm/aaaa)'}
     ]},
     { group:'Certificats contrôles périodiques citernes (copie dans le véhicule)', items:[
-      {label:'SI – de 5 ans (contrôle garage)', hint:'Date expiration (jj/mm/aaaa)'}
+      {label:'Graissage / Entretien - 3 semaines', hint:'Date expiration (jj/mm/aaaa)'}
     ]},
     { group:'Extérieur citerne', items:[
       {label:'Propreté dôme (absence de résidus)'},
@@ -397,11 +399,11 @@ const VEHICLE_SECTIONS = {
       {label:'Propreté générale conforme'}
     ]},
     { group:'Accessoires citerne', items:[
-      {label:'Porte flexibles'},
+      {label:'Plaques de stabilité (Bequille)'},
       {label:'Flexibles de dépotage'},
       {label:'Flexibles de liaison (air)'},
       {label:'Réductions x2'},
-      {label:'Pousseur'},
+      {label:'Joints'},
       {label:'Fouet anti-retour x4'},
       {label:'Coffres'},
       {label:'Certificat de lavage'}
@@ -496,7 +498,6 @@ const OBS_GENERALES = { title:'Observations générales conducteur', statusLabel
   {label:'EPI portés et en bon état'},
   {label:'Comportement sécurité du personnel satisfaisant'},
   {label:'Respect des procédures et des consignes'},
-  {label:"Matériel n'appartenant pas à l'entreprise"},
   {label:"Comportement conducteur face à l'audit"}
 ]}]};
 
