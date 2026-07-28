@@ -516,8 +516,10 @@ let index = [];
 
 // ---- Google Drive ----
 const GOOGLE_CLIENT_ID = '291536019384-dsfh0rjkc4mfkkkt4umc9rm83gbfa53d.apps.googleusercontent.com';
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 const DRIVE_FOLDER_NAME = 'Audits Transports Mesples';
+const STATS_SHEET_NAME = 'Statistiques Audits Mesples';
+let statsSheetId = localStorage.getItem('mesples_stats_sheet_id') || null;
 let driveAccessToken = null;
 let driveTokenClient = null;
 let driveFolderCache = JSON.parse(localStorage.getItem('mesples_drive_folder_cache') || '{}');
@@ -1331,6 +1333,61 @@ async function ensureDateFolder(dateStr){
   return dayId;
 }
 
+async function ensureStatsSheet(){
+  if(statsSheetId) return statsSheetId;
+
+  const rootId = await ensureFolder(DRIVE_FOLDER_NAME, null);
+  const q = `name='${STATS_SHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false and '${rootId}' in parents`;
+  const searchRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
+  const searchData = await searchRes.json();
+
+  if(searchData.files && searchData.files.length > 0){
+    statsSheetId = searchData.files[0].id;
+  } else {
+    const createRes = await driveFetch('https://sheets.googleapis.com/v4/spreadsheets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        properties: { title: STATS_SHEET_NAME },
+        sheets: [{ properties: { title: 'Audits' } }]
+      })
+    });
+    const createData = await createRes.json();
+    statsSheetId = createData.spreadsheetId;
+
+    // déplace la feuille nouvellement créée dans le dossier "Audits Transports Mesples"
+    await driveFetch(`https://www.googleapis.com/drive/v3/files/${statsSheetId}?addParents=${rootId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+
+    // ligne d'en-tête
+    await driveFetch(`https://sheets.googleapis.com/v4/spreadsheets/${statsSheetId}/values/Audits!A1:K1?valueInputOption=USER_ENTERED`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        values: [[
+          'Date audit', 'Conducteur', 'Entité', 'Client', 'Type véhicule',
+          'Tracteur', 'Remorque', 'Score (%)', 'Horodatage envoi', 'Lien PDF', 'Auditeur'
+        ]]
+      })
+    });
+  }
+
+  localStorage.setItem('mesples_stats_sheet_id', statsSheetId);
+  return statsSheetId;
+}
+
+async function appendStatsRow(row){
+  const sheetId = await ensureStatsSheet();
+  await driveFetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Audits!A:K:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values: [row] })
+  });
+}
+
 async function generateAuditPdfBlob(){
   document.body.classList.add('capturing-pdf');
   try{
@@ -1391,6 +1448,28 @@ async function uploadCurrentAuditToDrive(){
     if(!uploadRes.ok){
       const errText = await uploadRes.text().catch(() => '');
       throw new Error('Échec upload: ' + uploadRes.status + ' ' + errText);
+    }
+    const uploadData = await uploadRes.json();
+
+    if(timedOut) return;
+    btn.textContent = 'Mise à jour des statistiques...';
+    try{
+      await appendStatsRow([
+        date,
+        $('#fConducteur').value.trim(),
+        $('#fRattache').value.trim(),
+        $('#fClient').value.trim(),
+        currentVehicleType || '',
+        $('#fTracteur').value.trim(),
+        $('#fRemorque').value.trim(),
+        computeScore() === null ? '' : computeScore(),
+        new Date().toLocaleString('fr-FR'),
+        `https://drive.google.com/file/d/${uploadData.id}/view`,
+        $('#fAuditeur').value.trim()
+      ]);
+    }catch(statsErr){
+      console.error('Erreur mise à jour des statistiques', statsErr);
+      // on n'interrompt pas le flux : le PDF est bien envoyé même si la ligne de stats échoue
     }
 
     if(timedOut) return;
