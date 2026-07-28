@@ -198,6 +198,8 @@
   body.capturing-pdf .letter-overlay{ background:#fff; position:static !important; overflow:visible !important; inset:auto !important; }
   body.capturing-pdf .letter-page{ box-shadow:none; min-height:auto !important; margin:0 !important; }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -217,6 +219,7 @@
       <div class="doc-title">Rapport audit conducteur</div>
       <div class="score-badge"><div class="val" id="scoreVal">—</div><div class="lbl">Conformité</div></div>
       <button class="btn-pdf hide-for-pdf" id="btnPdf">Exporter en PDF</button>
+      <button class="btn-pdf hide-for-pdf" id="btnDrive">☁️ Envoyer vers Drive</button>
     </div>
 
     <div class="content">
@@ -249,7 +252,7 @@
       </div>
 
       <div class="section" style="margin-top:0;">
-        <div class="section-title-bar">Information de suivi</div>
+        <div class="section-title-bar">Lettre de suivi (envoi au chauffeur)</div>
         <div style="padding:14px;">
           <div class="id-grid" style="margin-bottom:12px;">
             <div class="id-cell"><label>Civilité</label>
@@ -336,7 +339,7 @@ const FIXED_TOP = [
     {label:'Paire de gants de manutention'},
     {label:'Gilet fluorescent'},
     {label:'Casque avec jugulaire'},
-    {label:'Paire de lunettes de sécurité'},
+    {label:'Paire de bottes étanches'},
     {label:'Protection auditive'},
     {label:'Combinaison étanche'},
     {label:'Veste ou bleu de travail'},
@@ -360,7 +363,7 @@ const FIXED_TOP = [
   ]}]},
   { title:'Extincteurs', groups:[{ group:null, items:[
     {label:'1 extincteur 2 kg plombé', hint:'Date expiration (jj/mm/aaaa)'},
-    {label:'1 extincteurs 6 kg plombés', hint:'Date expiration (jj/mm/aaaa)'}
+    {label:'2 extincteurs 6 kg plombés', hint:'Date expiration (jj/mm/aaaa)'}
   ]}]}
 ];
 
@@ -510,6 +513,15 @@ let currentPhotos = {};
 let photoRegistry = [];
 let currentVehicleType = '';
 let index = [];
+
+// ---- Google Drive ----
+const GOOGLE_CLIENT_ID = '291536019384-dsfh0rjkc4mfkkkt4umc9rm83gbfa53d.apps.googleusercontent.com';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER_NAME = 'Audits Transports Mesples';
+let driveAccessToken = null;
+let driveTokenClient = null;
+let driveFolderCache = JSON.parse(localStorage.getItem('mesples_drive_folder_cache') || '{}');
+let drivePendingAction = null;
 
 // ---- Pads de signature tactile ----
 const signaturePads = {};
@@ -1231,6 +1243,159 @@ $('#btnPrintLetter').addEventListener('click', () => {
   const conducteur = ($('#fLettrePrenom').value.trim() + '_' + $('#fLettreNom').value.trim()).trim() || 'chauffeur';
   printElementInNewWindow(document.getElementById('letterContent'), 'Lettre_audit_' + conducteur.replace(/\s+/g,'_'));
 });
+
+// ---- Connexion Google Drive ----
+function initGoogleDrive(){
+  if(!window.google || !google.accounts || !google.accounts.oauth2){
+    setTimeout(initGoogleDrive, 300);
+    return;
+  }
+  driveTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: DRIVE_SCOPE,
+    callback: (resp) => {
+      if(resp.error){
+        console.error('Erreur connexion Google Drive', resp);
+        $('#btnDrive').textContent = '☁️ Envoyer vers Drive';
+        alert("Connexion à Google Drive refusée ou annulée.");
+        return;
+      }
+      driveAccessToken = resp.access_token;
+      const action = drivePendingAction;
+      drivePendingAction = null;
+      if(action) action();
+    }
+  });
+}
+
+function connectDriveThen(action){
+  drivePendingAction = action;
+  if(!driveTokenClient){ alert("Google Drive n'est pas encore prêt, réessaie dans quelques secondes."); return; }
+  driveTokenClient.requestAccessToken({ prompt: driveAccessToken ? '' : 'consent' });
+}
+
+async function driveFetch(url, options){
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...(options && options.headers), Authorization: 'Bearer ' + driveAccessToken }
+  });
+  if(res.status === 401){
+    // jeton expiré : on redemande une connexion silencieuse puis on relance une seule fois
+    driveAccessToken = null;
+    throw new Error('EXPIRED_TOKEN');
+  }
+  return res;
+}
+
+async function ensureFolder(name, parentId){
+  const cacheKey = (parentId || 'root') + '::' + name;
+  if(driveFolderCache[cacheKey]) return driveFolderCache[cacheKey];
+
+  let q = `name='${name.replace(/'/g,"\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+  q += parentId ? ` and '${parentId}' in parents` : " and 'root' in parents";
+  const searchRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
+  const searchData = await searchRes.json();
+
+  let folderId;
+  if(searchData.files && searchData.files.length > 0){
+    folderId = searchData.files[0].id;
+  } else {
+    const body = { name, mimeType: 'application/vnd.google-apps.folder' };
+    if(parentId) body.parents = [parentId];
+    const createRes = await driveFetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const createData = await createRes.json();
+    folderId = createData.id;
+  }
+
+  driveFolderCache[cacheKey] = folderId;
+  localStorage.setItem('mesples_drive_folder_cache', JSON.stringify(driveFolderCache));
+  return folderId;
+}
+
+const MONTHS_FR_FOLDER = ['01 - Janvier','02 - Février','03 - Mars','04 - Avril','05 - Mai','06 - Juin','07 - Juillet','08 - Août','09 - Septembre','10 - Octobre','11 - Novembre','12 - Décembre'];
+
+async function ensureDateFolder(dateStr){
+  const d = dateStr ? new Date(dateStr + 'T12:00:00') : new Date();
+  const year = String(d.getFullYear());
+  const monthLabel = MONTHS_FR_FOLDER[d.getMonth()];
+
+  const rootId = await ensureFolder(DRIVE_FOLDER_NAME, null);
+  const yearId = await ensureFolder(year, rootId);
+  const monthId = await ensureFolder(monthLabel, yearId);
+  return monthId;
+}
+
+async function generateAuditPdfBlob(){
+  document.body.classList.add('capturing-pdf');
+  try{
+    const opt = {
+      margin: 8,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    window.scrollTo(0, 0);
+    return await html2pdf().set(opt).from(document.querySelector('.main')).outputPdf('blob');
+  } finally {
+    document.body.classList.remove('capturing-pdf');
+  }
+}
+
+async function uploadCurrentAuditToDrive(){
+  const btn = $('#btnDrive');
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Préparation du PDF...';
+  btn.disabled = true;
+  try{
+    const conducteur = ($('#fConducteur').value.trim() || 'audit').replace(/\s+/g, '_');
+    const date = $('#fDate').value || new Date().toISOString().slice(0,10);
+    const filename = `Audit_${conducteur}_${date}.pdf`;
+
+    const blob = await generateAuditPdfBlob();
+
+    btn.textContent = 'Envoi vers Drive...';
+    const folderId = await ensureDateFolder(date);
+    const metadata = { name: filename, mimeType: 'application/pdf', parents: [folderId] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', blob);
+
+    const uploadRes = await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      body: form
+    });
+    if(!uploadRes.ok) throw new Error('Échec upload: ' + uploadRes.status);
+
+    btn.textContent = '✅ Envoyé sur Drive';
+    setTimeout(() => { btn.textContent = originalLabel; btn.disabled = false; }, 2500);
+  }catch(err){
+    console.error('Erreur envoi Drive', err);
+    if(err.message === 'EXPIRED_TOKEN'){
+      btn.textContent = originalLabel;
+      btn.disabled = false;
+      connectDriveThen(uploadCurrentAuditToDrive);
+      return;
+    }
+    btn.textContent = originalLabel;
+    btn.disabled = false;
+    alert("L'envoi vers Google Drive a échoué. Vérifie ta connexion et réessaie.");
+  }
+}
+
+$('#btnDrive').addEventListener('click', () => {
+  if(driveAccessToken){
+    uploadCurrentAuditToDrive();
+  } else {
+    $('#btnDrive').textContent = 'Connexion à Google...';
+    connectDriveThen(uploadCurrentAuditToDrive);
+  }
+});
+
+initGoogleDrive();
 
 (async function init(){
   initSignaturePads();
