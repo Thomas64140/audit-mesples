@@ -1322,11 +1322,13 @@ async function ensureDateFolder(dateStr){
   const d = dateStr ? new Date(dateStr + 'T12:00:00') : new Date();
   const year = String(d.getFullYear());
   const monthLabel = MONTHS_FR_FOLDER[d.getMonth()];
+  const dayLabel = String(d.getDate()).padStart(2,'0') + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + year;
 
   const rootId = await ensureFolder(DRIVE_FOLDER_NAME, null);
   const yearId = await ensureFolder(year, rootId);
   const monthId = await ensureFolder(monthLabel, yearId);
-  return monthId;
+  const dayId = await ensureFolder(dayLabel, monthId);
+  return dayId;
 }
 
 async function generateAuditPdfBlob(){
@@ -1347,16 +1349,34 @@ async function generateAuditPdfBlob(){
 
 async function uploadCurrentAuditToDrive(){
   const btn = $('#btnDrive');
-  const originalLabel = btn.textContent;
+  if(btn.disabled){
+    console.warn('Upload déjà en cours, clic ignoré.');
+    return;
+  }
+  const originalLabel = '☁️ Envoyer vers Drive';
   btn.textContent = 'Préparation du PDF...';
   btn.disabled = true;
+
+  const timeoutMs = 45000;
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    console.error('Envoi Drive : délai dépassé (45s), le PDF est peut-être trop lourd à générer.');
+    btn.textContent = originalLabel;
+    btn.disabled = false;
+    alert("L'envoi a pris trop de temps et a été annulé. Réessaie, ou vérifie ta connexion internet.");
+  }, timeoutMs);
+
   try{
     const conducteur = ($('#fConducteur').value.trim() || 'audit').replace(/\s+/g, '_');
     const date = $('#fDate').value || new Date().toISOString().slice(0,10);
     const filename = `Audit_${conducteur}_${date}.pdf`;
 
+    console.log('Génération du PDF...');
     const blob = await generateAuditPdfBlob();
+    console.log('PDF généré, taille (Ko) :', Math.round(blob.size/1024));
 
+    if(timedOut) return;
     btn.textContent = 'Envoi vers Drive...';
     const folderId = await ensureDateFolder(date);
     const metadata = { name: filename, mimeType: 'application/pdf', parents: [folderId] };
@@ -1368,21 +1388,26 @@ async function uploadCurrentAuditToDrive(){
       method: 'POST',
       body: form
     });
-    if(!uploadRes.ok) throw new Error('Échec upload: ' + uploadRes.status);
+    if(!uploadRes.ok){
+      const errText = await uploadRes.text().catch(() => '');
+      throw new Error('Échec upload: ' + uploadRes.status + ' ' + errText);
+    }
 
+    if(timedOut) return;
+    clearTimeout(timeoutId);
     btn.textContent = '✅ Envoyé sur Drive';
     setTimeout(() => { btn.textContent = originalLabel; btn.disabled = false; }, 2500);
   }catch(err){
+    clearTimeout(timeoutId);
+    if(timedOut) return;
     console.error('Erreur envoi Drive', err);
-    if(err.message === 'EXPIRED_TOKEN'){
-      btn.textContent = originalLabel;
-      btn.disabled = false;
-      connectDriveThen(uploadCurrentAuditToDrive);
-      return;
-    }
     btn.textContent = originalLabel;
     btn.disabled = false;
-    alert("L'envoi vers Google Drive a échoué. Vérifie ta connexion et réessaie.");
+    if(err.message === 'EXPIRED_TOKEN'){
+      alert("La connexion à Google a expiré. Reclique sur le bouton pour te reconnecter.");
+      return;
+    }
+    alert("L'envoi vers Google Drive a échoué : " + err.message);
   }
 }
 
