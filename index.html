@@ -222,7 +222,8 @@
     <div class="content">
       <div class="id-grid">
         <div class="id-cell"><label>Nom-Prénom conducteur</label><input id="fConducteur"></div>
-        <div class="id-cell"><label>Rattaché à</label><input id="fRattache"></div>
+        <div class="id-cell"><label>Entité</label><input id="fRattache"></div>
+        <div class="id-cell"><label>Client</label><input id="fClient"></div>
         <div class="id-cell"><label>Date de l'audit</label><input id="fDate" type="date"></div>
         <div class="id-cell"><label>Nom-Prénom auditeur</label><input id="fAuditeur"></div>
         <div class="id-cell"><label>Immatriculation tracteur</label><input id="fTracteur" placeholder="AB-123-CD"></div>
@@ -248,7 +249,7 @@
       </div>
 
       <div class="section" style="margin-top:0;">
-        <div class="section-title-bar">information de suivi </div>
+        <div class="section-title-bar">Lettre de suivi (envoi au chauffeur)</div>
         <div style="padding:14px;">
           <div class="id-grid" style="margin-bottom:12px;">
             <div class="id-cell"><label>Civilité</label>
@@ -335,10 +336,10 @@ const FIXED_TOP = [
     {label:'Paire de gants de manutention'},
     {label:'Gilet fluorescent'},
     {label:'Casque avec jugulaire'},
-    {label:'Paire de lunettes de sécurité'},
+    {label:'Paire de bottes étanches'},
     {label:'Protection auditive'},
+    {label:'Combinaison étanche'},
     {label:'Veste ou bleu de travail'},
-    {label:'Trousse de secours (Obligation Lafarge)'},
     {label:'Combinaison ATEX'}
   ]}]},
   { title:'ADR', groups:[{ group:null, items:[
@@ -359,7 +360,7 @@ const FIXED_TOP = [
   ]}]},
   { title:'Extincteurs', groups:[{ group:null, items:[
     {label:'1 extincteur 2 kg plombé', hint:'Date expiration (jj/mm/aaaa)'},
-    {label:'1 extincteurs 6 kg plombés', hint:'Date expiration (jj/mm/aaaa)'}
+    {label:'2 extincteurs 6 kg plombés', hint:'Date expiration (jj/mm/aaaa)'}
   ]}]}
 ];
 
@@ -498,6 +499,7 @@ const OBS_GENERALES = { title:'Observations générales conducteur', statusLabel
   {label:'EPI portés et en bon état'},
   {label:'Comportement sécurité du personnel satisfaisant'},
   {label:'Respect des procédures et des consignes'},
+  {label:"Matériel n'appartenant pas à l'entreprise"},
   {label:"Comportement conducteur face à l'audit"}
 ]}]};
 
@@ -880,7 +882,7 @@ function newAudit(){
   currentObs = {};
   currentPhotos = {};
   currentVehicleType = '';
-  ['fConducteur','fRattache','fTracteur','fRemorque','fCommentaires','fPositifs','fEcarts','fActions','fSignConducteur','fSignAuditeur','fLettrePrenom','fLettreNom','fSiteAudit','fAdresseRue','fAdresseVille','fRedacteurNom','fRedacteurFonction','fRemarquesLettre'].forEach(id => $('#'+id).value = '');
+  ['fConducteur','fRattache','fClient','fTracteur','fRemorque','fCommentaires','fPositifs','fEcarts','fActions','fSignConducteur','fSignAuditeur','fLettrePrenom','fLettreNom','fSiteAudit','fAdresseRue','fAdresseVille','fRedacteurNom','fRedacteurFonction','fRemarquesLettre'].forEach(id => $('#'+id).value = '');
   $('#fLettreCivilite').value = 'Monsieur';
   $('#fLieuEnvoi').value = 'Salles-Mongiscard';
   $('#fDate').value = new Date().toISOString().slice(0,10);
@@ -942,6 +944,7 @@ async function loadAudit(id){
     currentVehicleType = data.vehicleType || '';
     $('#fConducteur').value = data.conducteur || '';
     $('#fRattache').value = data.rattache || '';
+    $('#fClient').value = data.client || '';
     $('#fDate').value = data.date || '';
     $('#fAuditeur').value = data.auditeur || '';
     $('#fTracteur').value = data.tracteur || '';
@@ -983,6 +986,7 @@ async function saveAudit(){
   const data = {
     conducteur: $('#fConducteur').value.trim(),
     rattache: $('#fRattache').value.trim(),
+    client: $('#fClient').value.trim(),
     date: $('#fDate').value,
     auditeur: $('#fAuditeur').value.trim(),
     tracteur: $('#fTracteur').value.trim(),
@@ -1058,12 +1062,12 @@ function toCsvRow(data){
     VEHICLE_SECTIONS[data.vehicleType].forEach((sec, sIdx) => flattenSectionForCsv(sec, 'veh'+sIdx, data, flat));
   }
   flattenSectionForCsv(OBS_GENERALES, 'obs0', data, flat);
-  return [data.conducteur, data.vehicleType, data.date, data.tracteur, data.remorque, data.score!==null?data.score+'%':'', ...flat].join(';');
+  return [data.conducteur, data.client, data.vehicleType, data.date, data.tracteur, data.remorque, data.score!==null?data.score+'%':'', ...flat].join(';');
 }
 
 async function exportAll(){
   if(index.length === 0){ alert('Aucun audit à exporter.'); return; }
-  const rows = ['Conducteur;Type véhicule;Date;Tracteur;Remorque;Score;Détail'];
+  const rows = ['Conducteur;Client;Type véhicule;Date;Tracteur;Remorque;Score;Détail'];
   for(const entry of index){
     try{
       const res = await store.get('audit:' + entry.id);
