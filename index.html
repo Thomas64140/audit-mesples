@@ -1333,60 +1333,120 @@ async function ensureDateFolder(dateStr){
   return dayId;
 }
 
+const JOURNAL_SHEET_NAME = 'Journal des Audits';
+const JOURNAL_FIRST_ROW = 5;
+const JOURNAL_LAST_ROW = 429;
+
+// Recherche le fichier modèle déjà présent dans le Drive (ne le crée jamais lui-même :
+// c'est Thomas qui l'a construit avec ses formules, on ne veut surtout pas l'écraser)
 async function ensureStatsSheet(){
   if(statsSheetId) return statsSheetId;
-
   const rootId = await ensureFolder(DRIVE_FOLDER_NAME, null);
-  const q = `name='${STATS_SHEET_NAME}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false and '${rootId}' in parents`;
+  const q = `mimeType='application/vnd.google-apps.spreadsheet' and trashed=false and '${rootId}' in parents and name contains 'Suivi_Audits_Conducteurs_Mesples'`;
   const searchRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
   const searchData = await searchRes.json();
-
   if(searchData.files && searchData.files.length > 0){
     statsSheetId = searchData.files[0].id;
-  } else {
-    const createRes = await driveFetch('https://sheets.googleapis.com/v4/spreadsheets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        properties: { title: STATS_SHEET_NAME },
-        sheets: [{ properties: { title: 'Audits' } }]
-      })
-    });
-    const createData = await createRes.json();
-    statsSheetId = createData.spreadsheetId;
-
-    // déplace la feuille nouvellement créée dans le dossier "Audits Transports Mesples"
-    await driveFetch(`https://www.googleapis.com/drive/v3/files/${statsSheetId}?addParents=${rootId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    });
-
-    // ligne d'en-tête
-    await driveFetch(`https://sheets.googleapis.com/v4/spreadsheets/${statsSheetId}/values/Audits!A1:K1?valueInputOption=USER_ENTERED`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        values: [[
-          'Date audit', 'Conducteur', 'Entité', 'Client', 'Type véhicule',
-          'Tracteur', 'Remorque', 'Score (%)', 'Horodatage envoi', 'Lien PDF', 'Auditeur'
-        ]]
-      })
-    });
+    localStorage.setItem('mesples_stats_sheet_id', statsSheetId);
+    return statsSheetId;
   }
-
-  localStorage.setItem('mesples_stats_sheet_id', statsSheetId);
-  return statsSheetId;
+  throw new Error('MODELE_INTROUVABLE');
 }
 
-async function appendStatsRow(row){
+function statusFor(key){
+  const v = currentStatuses[key];
+  return v === 'ok' ? 'Oui' : v === 'bad' ? 'Non' : 'N.A.';
+}
+
+// Cherche la première ligne "vraiment vide" (colonnes Entité ET Site client vides)
+// dans le Journal — c'est exactement la logique que la formule N° du fichier utilise déjà.
+async function findNextJournalRow(sheetId){
+  const res = await driveFetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/'${JOURNAL_SHEET_NAME}'!C${JOURNAL_FIRST_ROW}:D${JOURNAL_LAST_ROW}`
+  );
+  const data = await res.json();
+  const rows = data.values || [];
+  for(let i = 0; i <= JOURNAL_LAST_ROW - JOURNAL_FIRST_ROW; i++){
+    const r = rows[i] || [];
+    const c = (r[0] || '').toString().trim();
+    const d = (r[1] || '').toString().trim();
+    if(!c && !d) return JOURNAL_FIRST_ROW + i;
+  }
+  throw new Error('JOURNAL_PLEIN');
+}
+
+async function appendStatsRow(pdfUrl){
   const sheetId = await ensureStatsSheet();
-  await driveFetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Audits!A:K:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`, {
+  const row = await findNextJournalRow(sheetId);
+
+  const score = computeScore();
+  const conclusion = score === null ? '' : (score >= 85 ? 'Conforme' : score >= 60 ? 'Conforme avec réserves' : 'Non conforme');
+
+  const conducteur = $('#fConducteur').value.trim();
+  const parts = conducteur.split(/\s+/).filter(Boolean);
+  const nom = parts[0] || '';
+  const prenom = parts.slice(1).join(' ') || '';
+
+  // B..Q : identification + EPI (9 items). M et O ne sont pas suivis dans l'appli -> N.A.
+  const bToQ = [
+    $('#fDate').value || '',
+    $('#fRattache').value.trim(),
+    $('#fClient').value.trim(),
+    currentVehicleType || '',
+    nom,
+    prenom,
+    $('#fAuditeur').value.trim(),
+    statusFor('top1::0::0'), statusFor('top1::0::1'), statusFor('top1::0::2'), statusFor('top1::0::3'),
+    'N.A.',
+    statusFor('top1::0::5'),
+    'N.A.',
+    statusFor('top1::0::6'),
+    statusFor('top1::0::8')
+  ];
+
+  // S..AM : Matériel (21 items) — Documents + Extincteurs + ADR
+  const sToAm = [
+    statusFor('top0::0::1'), statusFor('top0::0::3'), statusFor('top0::0::4'), statusFor('top0::0::5'), statusFor('top0::0::6'),
+    statusFor('top3::0::0'), statusFor('top3::0::1'),
+    statusFor('top2::0::0'), statusFor('top2::0::1'), statusFor('top2::0::2'), statusFor('top2::0::3'), statusFor('top2::0::4'),
+    statusFor('top2::0::5'), statusFor('top2::0::6'), statusFor('top2::0::7'), statusFor('top2::0::8'), statusFor('top2::0::9'),
+    statusFor('top2::0::10'), statusFor('top2::0::11'), statusFor('top2::0::12'), statusFor('top2::0::13')
+  ];
+
+  // AO..AW : Comportement (9 items). AV non suivi dans l'appli -> N.A.
+  const aoToAw = [
+    statusFor('obs0::0::0'), statusFor('obs0::0::1'), statusFor('obs0::0::2'), statusFor('obs0::0::3'),
+    statusFor('obs0::0::4'), statusFor('obs0::0::5'), statusFor('obs0::0::6'),
+    'N.A.',
+    statusFor('obs0::0::7')
+  ];
+
+  // AY..BF : conclusion / suivi
+  const ayToBf = [
+    conclusion,
+    $('#fPositifs').value,
+    $('#fEcarts').value,
+    $('#fActions').value,
+    '', '', '',
+    pdfUrl ? `=HYPERLINK("${pdfUrl}";"Voir le PDF")` : ''
+  ];
+
+  await driveFetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchUpdate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ values: [row] })
+    body: JSON.stringify({
+      valueInputOption: 'USER_ENTERED',
+      data: [
+        { range: `'${JOURNAL_SHEET_NAME}'!B${row}:Q${row}`, values: [bToQ] },
+        { range: `'${JOURNAL_SHEET_NAME}'!S${row}:AM${row}`, values: [sToAm] },
+        { range: `'${JOURNAL_SHEET_NAME}'!AO${row}:AW${row}`, values: [aoToAw] },
+        { range: `'${JOURNAL_SHEET_NAME}'!AY${row}:BF${row}`, values: [ayToBf] }
+      ]
+    })
   });
 }
+
+
 
 async function generateAuditPdfBlob(){
   document.body.classList.add('capturing-pdf');
@@ -1454,21 +1514,14 @@ async function uploadCurrentAuditToDrive(){
     if(timedOut) return;
     btn.textContent = 'Mise à jour des statistiques...';
     try{
-      await appendStatsRow([
-        date,
-        $('#fConducteur').value.trim(),
-        $('#fRattache').value.trim(),
-        $('#fClient').value.trim(),
-        currentVehicleType || '',
-        $('#fTracteur').value.trim(),
-        $('#fRemorque').value.trim(),
-        computeScore() === null ? '' : computeScore(),
-        new Date().toLocaleString('fr-FR'),
-        `https://drive.google.com/file/d/${uploadData.id}/view`,
-        $('#fAuditeur').value.trim()
-      ]);
+      await appendStatsRow(`https://drive.google.com/file/d/${uploadData.id}/view`);
     }catch(statsErr){
       console.error('Erreur mise à jour des statistiques', statsErr);
+      if(statsErr.message === 'MODELE_INTROUVABLE'){
+        alert("Le PDF est bien envoyé, mais le fichier de statistiques n'a pas été trouvé dans Drive. Vérifie qu'il est bien importé (au format Google Sheets) dans le dossier \"Audits Transports Mesples\".");
+      } else if(statsErr.message === 'JOURNAL_PLEIN'){
+        alert("Le PDF est bien envoyé, mais le Journal des Audits est complet (429 lignes). Il faudra en ajouter dans le fichier.");
+      }
       // on n'interrompt pas le flux : le PDF est bien envoyé même si la ligne de stats échoue
     }
 
