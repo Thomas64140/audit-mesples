@@ -522,7 +522,7 @@ const STATS_SHEET_NAME = 'Statistiques Audits Mesples';
 let statsSheetId = localStorage.getItem('mesples_stats_sheet_id') || null;
 let driveAccessToken = null;
 let driveTokenClient = null;
-let driveFolderCache = JSON.parse(localStorage.getItem('mesples_drive_folder_cache') || '{}');
+let driveFolderCache = JSON.parse(localStorage.getItem('mesples_drive_folder_cache_v2') || '{}');
 let drivePendingAction = null;
 
 // ---- Pads de signature tactile ----
@@ -1293,14 +1293,20 @@ async function ensureFolder(name, parentId){
   const cacheKey = (parentId || 'root') + '::' + name;
   if(driveFolderCache[cacheKey]) return driveFolderCache[cacheKey];
 
+  // Avec le scope drive.file, la recherche ne renvoie de toute façon que les fichiers
+  // déjà créés/ouverts par l'appli : pas besoin d'un filtre supplémentaire sur le parent
+  // pour la racine, qui peut échouer selon les comptes.
   let q = `name='${name.replace(/'/g,"\\'")}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-  q += parentId ? ` and '${parentId}' in parents` : " and 'root' in parents";
-  const searchRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
+  if(parentId) q += ` and '${parentId}' in parents`;
+  const searchRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,parents)`);
   const searchData = await searchRes.json();
 
   let folderId;
-  if(searchData.files && searchData.files.length > 0){
-    folderId = searchData.files[0].id;
+  const candidates = searchData.files || [];
+  const match = parentId ? candidates.find(f => (f.parents || []).includes(parentId)) : candidates[0];
+
+  if(match){
+    folderId = match.id;
   } else {
     const body = { name, mimeType: 'application/vnd.google-apps.folder' };
     if(parentId) body.parents = [parentId];
@@ -1313,8 +1319,12 @@ async function ensureFolder(name, parentId){
     folderId = createData.id;
   }
 
+  if(!folderId){
+    throw new Error('DOSSIER_INTROUVABLE: ' + name);
+  }
+
   driveFolderCache[cacheKey] = folderId;
-  localStorage.setItem('mesples_drive_folder_cache', JSON.stringify(driveFolderCache));
+  localStorage.setItem('mesples_drive_folder_cache_v2', JSON.stringify(driveFolderCache));
   return folderId;
 }
 
@@ -1496,6 +1506,10 @@ async function uploadCurrentAuditToDrive(){
     if(timedOut) return;
     btn.textContent = 'Envoi vers Drive...';
     const folderId = await ensureDateFolder(date);
+    if(!folderId){
+      throw new Error('Le dossier de destination sur Drive est introuvable ou invalide.');
+    }
+    console.log('Dossier Drive ciblé pour cet envoi :', folderId);
     const metadata = { name: filename, mimeType: 'application/pdf', parents: [folderId] };
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
