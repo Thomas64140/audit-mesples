@@ -519,7 +519,7 @@ const GOOGLE_CLIENT_ID = '291536019384-dsfh0rjkc4mfkkkt4umc9rm83gbfa53d.apps.goo
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
 const DRIVE_FOLDER_NAME = 'Audits Transports Mesples';
 const STATS_SHEET_NAME = 'Statistiques Audits Mesples';
-let statsSheetId = localStorage.getItem('mesples_stats_sheet_id') || null;
+let statsSheetId = localStorage.getItem('mesples_stats_sheet_id_v2') || null;
 let driveAccessToken = null;
 let driveTokenClient = null;
 let driveFolderCache = JSON.parse(localStorage.getItem('mesples_drive_folder_cache_v2') || '{}');
@@ -1361,7 +1361,7 @@ async function ensureStatsSheet(){
   const searchData = await searchRes.json();
   if(searchData.files && searchData.files.length > 0){
     statsSheetId = searchData.files[0].id;
-    localStorage.setItem('mesples_stats_sheet_id', statsSheetId);
+    localStorage.setItem('mesples_stats_sheet_id_v2', statsSheetId);
     return statsSheetId;
   }
   throw new Error('MODELE_INTROUVABLE');
