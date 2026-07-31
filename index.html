@@ -516,7 +516,7 @@ let index = [];
 
 // ---- Google Drive ----
 const GOOGLE_CLIENT_ID = '291536019384-dsfh0rjkc4mfkkkt4umc9rm83gbfa53d.apps.googleusercontent.com';
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
 const DRIVE_FOLDER_NAME = 'Audits Transports Mesples';
 const STATS_SHEET_NAME = 'Statistiques Audits Mesples';
 let statsSheetId = localStorage.getItem('mesples_stats_sheet_id') || null;
@@ -1375,8 +1375,9 @@ function statusFor(key){
 // Cherche la première ligne "vraiment vide" (colonnes Entité ET Site client vides)
 // dans le Journal — c'est exactement la logique que la formule N° du fichier utilise déjà.
 async function findNextJournalRow(sheetId){
+  const range = `'${JOURNAL_SHEET_NAME}'!C${JOURNAL_FIRST_ROW}:D${JOURNAL_LAST_ROW}`;
   const res = await driveFetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/'${JOURNAL_SHEET_NAME}'!C${JOURNAL_FIRST_ROW}:D${JOURNAL_LAST_ROW}`
+    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(range)}`
   );
   const data = await res.json();
   const rows = data.values || [];
