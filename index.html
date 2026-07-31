@@ -1286,6 +1286,10 @@ async function driveFetch(url, options){
     driveAccessToken = null;
     throw new Error('EXPIRED_TOKEN');
   }
+  if(!res.ok){
+    const errBody = await res.clone().text().catch(() => '');
+    throw new Error(`Requête Google refusée (${res.status}) : ${errBody.slice(0, 300)}`);
+  }
   return res;
 }
 
@@ -1535,6 +1539,8 @@ async function uploadCurrentAuditToDrive(){
         alert("Le PDF est bien envoyé, mais le fichier de statistiques n'a pas été trouvé dans Drive. Vérifie qu'il est bien importé (au format Google Sheets) dans le dossier \"Audits Transports Mesples\".");
       } else if(statsErr.message === 'JOURNAL_PLEIN'){
         alert("Le PDF est bien envoyé, mais le Journal des Audits est complet (429 lignes). Il faudra en ajouter dans le fichier.");
+      } else {
+        alert("Le PDF est bien envoyé, mais la mise à jour des statistiques a échoué :\n\n" + statsErr.message);
       }
       // on n'interrompt pas le flux : le PDF est bien envoyé même si la ligne de stats échoue
     }
