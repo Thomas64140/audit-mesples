@@ -525,6 +525,7 @@ let index = [];
 const GOOGLE_CLIENT_ID = '291536019384-dsfh0rjkc4mfkkkt4umc9rm83gbfa53d.apps.googleusercontent.com';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
 const DRIVE_FOLDER_NAME = 'Audits Transports Mesples';
+const ROOT_FOLDER_ID = '11v0ytgVoDzWPfAzPliXyeUcBRLiCuTWq';
 const STATS_SHEET_NAME = 'Statistiques Audits Mesples';
 let statsSheetId = localStorage.getItem('mesples_stats_sheet_id_v2') || null;
 let driveAccessToken = null;
@@ -1395,7 +1396,7 @@ async function ensureDateFolder(dateStr){
   const monthLabel = MONTHS_FR_FOLDER[d.getMonth()];
   const dayLabel = String(d.getDate()).padStart(2,'0') + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + year;
 
-  const rootId = await ensureFolder(DRIVE_FOLDER_NAME, null);
+  const rootId = ROOT_FOLDER_ID;
   const yearId = await ensureFolder(year, rootId);
   const monthId = await ensureFolder(monthLabel, yearId);
   const dayId = await ensureFolder(dayLabel, monthId);
@@ -1410,7 +1411,7 @@ const JOURNAL_LAST_ROW = 429;
 // c'est Thomas qui l'a construit avec ses formules, on ne veut surtout pas l'écraser)
 async function ensureStatsSheet(){
   if(statsSheetId) return statsSheetId;
-  const rootId = await ensureFolder(DRIVE_FOLDER_NAME, null);
+  const rootId = ROOT_FOLDER_ID;
   const q = `mimeType='application/vnd.google-apps.spreadsheet' and trashed=false and '${rootId}' in parents and name contains 'Suivi_Audits_Conducteurs_Mesples'`;
   const searchRes = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
   const searchData = await searchRes.json();
