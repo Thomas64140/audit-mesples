@@ -529,7 +529,7 @@ const STATS_SHEET_NAME = 'Statistiques Audits Mesples';
 let statsSheetId = localStorage.getItem('mesples_stats_sheet_id_v2') || null;
 let driveAccessToken = null;
 let driveTokenClient = null;
-let driveFolderCache = JSON.parse(localStorage.getItem('mesples_drive_folder_cache_v2') || '{}');
+let driveFolderCache = JSON.parse(localStorage.getItem('mesples_drive_folder_cache_v3') || '{}');
 let drivePendingAction = null;
 
 // ---- Pads de signature tactile ----
@@ -1383,7 +1383,7 @@ async function ensureFolder(name, parentId){
   }
 
   driveFolderCache[cacheKey] = folderId;
-  localStorage.setItem('mesples_drive_folder_cache_v2', JSON.stringify(driveFolderCache));
+  localStorage.setItem('mesples_drive_folder_cache_v3', JSON.stringify(driveFolderCache));
   return folderId;
 }
 
